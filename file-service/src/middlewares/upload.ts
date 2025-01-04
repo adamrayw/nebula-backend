@@ -4,10 +4,10 @@ import multer from "multer";
 import multers3 from 'multer-s3';
 
 const s3 = new S3Client({
-    region: "us-east-1",
+    region: process.env.AWS_REGION as string,
     credentials: {
-        accessKeyId: "AKIAU6VTTGT7PXD3SK6N",
-        secretAccessKey: "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",
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID as string,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY as string,
     },
     requestHandler: new NodeHttpHandler({
         connectionTimeout: 300000,
