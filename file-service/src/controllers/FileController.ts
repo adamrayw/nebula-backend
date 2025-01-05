@@ -107,6 +107,27 @@ class UploadController {
             }
         }
     }
+    
+    insertStarred = async (req: Request, res: Response) => {
+        try {
+            const userId = req.user as { id: string }
+            const fileId = req.params.fileId
+
+            const insertedStarred = await this.fileService.insertStarred(userId.id, fileId)
+
+            res.status(StatusCodes.OK).json({
+                status: 200,
+                data: insertedStarred
+            })
+        } catch (error) {
+            if (error instanceof Error) {
+                res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+                    status: 500,
+                    message: error.message
+                })
+            }
+        }
+    }
 }
 
 export default UploadController;

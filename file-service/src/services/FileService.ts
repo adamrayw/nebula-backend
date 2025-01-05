@@ -19,10 +19,15 @@ class FileService {
     deleteFile = (fileId: string) => {
         return this.fileRepository.deleteFile(fileId)
     }
- 
+
     totalFileSize = (userId: string) => {
         return this.fileRepository.totalFileSize(userId)
     }
+    
+    insertStarred = (userId: string, fileId: string) => {
+        return this.fileRepository.insertStarred(userId, fileId)
+    }
+
 }
 
 export default FileService;

@@ -20,5 +20,6 @@ router.post('/file/uploadFile', [upload, verifyToken, writeThought()], fileContr
 router.get('/file/getFiles', verifyToken, redisCachingMiddleware(), fileController.getAllFiles)
 router.delete('/file/deleteFile/:fileId', verifyToken, writeThought(), fileController.deleteFile)
 router.get('/file/totalFileSize/:userId', verifyToken, fileController.totalFileSize)
+router.post('/file/starred/:fileId', verifyToken, fileController.insertStarred)
 
 export default router;

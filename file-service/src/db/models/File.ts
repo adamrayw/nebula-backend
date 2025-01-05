@@ -54,15 +54,4 @@ File.init({
   modelName: 'File',
 });
 
-File.associate = (models: any) => {
-  File.belongsTo(models.User, {
-    as: 'user',
-    foreignKey: {
-      name: 'userId',
-      allowNull: false
-    },
-    foreignKeyConstraint: true
-  })
-}
-
 export default File;

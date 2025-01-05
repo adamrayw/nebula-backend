@@ -61,6 +61,15 @@ class UploadRespository {
 
         return totalFile
     }
+
+    insertStarred = async (userId: string, fileId: string) => {
+        const insertToStarred = await File.create({
+            userId,
+            fileId
+        })
+
+        return insertToStarred;
+    }
 }
 
 export default UploadRespository;
