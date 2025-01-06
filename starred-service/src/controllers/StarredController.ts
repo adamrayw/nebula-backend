@@ -59,6 +59,34 @@ class StarredController {
             }
         }
     }
+    
+    removeStarred = async (req: Request, res: Response) => {
+        try {
+            const fileId = req.params.fileId
+
+            const removeStarred = await this.starredService.removeStarred(fileId)
+
+            if(removeStarred === 404) {
+                res.status(StatusCodes.NOT_FOUND).json({
+                    status: 404,
+                    message: "File not found",
+                })
+                return
+            }
+
+            res.status(StatusCodes.OK).json({
+                status: 200,
+                message: "File removed from starred!"
+            })
+        } catch (error) {
+            if (error instanceof Error) {
+                res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+                    status: 500,
+                    message: error.message
+                })
+            }
+        }
+    }
 }
 
 export default StarredController;

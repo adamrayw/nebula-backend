@@ -122,7 +122,7 @@ export function writeThought() {
             // membuat custom key, kalau menggunakan requestToKey path akan mengarah ke file/uploadFile
             const userId = typeof req.user !== 'string' ? req.user?.id : undefined;
             let key = undefined
-            if (req.path === '/file/uploadFile' || req.path.startsWith('/file/deleteFile')) {
+            if (req.path === '/file/uploadFile' || req.path.startsWith('/file/deleteFile') || req.path.startsWith('/file/starred')) {
                 key = `/file/getFiles@${userId}`
             } else {
                 key = `/user/getUserInfo@${userId}`

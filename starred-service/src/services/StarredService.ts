@@ -14,6 +14,10 @@ class StarredService {
     insertStarred = (userId: string, fileId: string) => {
         return this.starredRepository.insertStarred(userId, fileId)
     }
+    
+    removeStarred = (fileId: string) => {
+        return this.starredRepository.removeStarred(fileId)
+    }
 
 }
 

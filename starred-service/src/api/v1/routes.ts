@@ -1,6 +1,7 @@
 import { Request, Response, Router } from "express";
 import verifyToken from "../../middlewares/verfiyToken";
 import StarredController from "../../controllers/StarredController";
+import { writeThought } from "../../middlewares/redis";
 
 const router = Router();
 const starredController = new StarredController()
@@ -14,7 +15,8 @@ router.get("/", (req: Request, res: Response) => {
 })
 
 // file
-router.post('/file/starred/:fileId', verifyToken, starredController.insertStarred)
-router.get("/file/starred/:userId", verifyToken, starredController.getStarreds)
+router.post('/file/starred/:fileId', [verifyToken, writeThought()], starredController.insertStarred)
+router.delete('/file/starred/:fileId', [verifyToken, writeThought()], starredController.removeStarred)
+router.get("/file/starred/:userId", [verifyToken, writeThought()], starredController.getStarreds)
 
 export default router;

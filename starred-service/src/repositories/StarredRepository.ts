@@ -13,7 +13,7 @@ class StarredRepository {
             }
         })
 
-        if(checkStarred) {
+        if (checkStarred) {
             return 409
         }
 
@@ -23,6 +23,29 @@ class StarredRepository {
         })
 
         return insertToStarred;
+    }
+
+    removeStarred = async (fileId: string) => {
+
+        const checkStarred = await Starred.findOne({
+            where: {
+                fileId: {
+                    [Op.eq]: fileId
+                }
+            }
+        })
+
+        if (!checkStarred) {
+            return 404
+        }
+
+        const removeToStarred = await Starred.destroy({
+            where: {
+                fileId
+            }
+        })
+
+        return removeToStarred;
     }
 
     getStarreds = async (userId: string) => {
