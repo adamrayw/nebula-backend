@@ -25,6 +25,16 @@ class StarredRepository {
         return insertToStarred;
     }
 
+    getStarreds = async (userId: string) => {
+        const getStarredData = await Starred.findAll({
+            where: {
+                userId
+            }
+        })
+
+        return getStarredData;
+    }
+
 }
 
 export default StarredRepository;

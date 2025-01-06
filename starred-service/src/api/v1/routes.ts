@@ -15,5 +15,6 @@ router.get("/", (req: Request, res: Response) => {
 
 // file
 router.post('/file/starred/:fileId', verifyToken, starredController.insertStarred)
+router.get("/file/starred/:userId", verifyToken, starredController.getStarreds)
 
 export default router;
