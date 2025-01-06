@@ -12,8 +12,8 @@ class FileService {
         return this.fileRepository.upload(data)
     }
 
-    getAllFiles = (userId: string, search: string, offset: string) => {
-        return this.fileRepository.getAllFiles(userId, search, offset)
+    getAllFiles = (userId: string, search: string, offset: string, token: string) => {
+        return this.fileRepository.getAllFiles(userId, search, offset, token)
     }
 
     deleteFile = (fileId: string) => {
@@ -24,10 +24,6 @@ class FileService {
         return this.fileRepository.totalFileSize(userId)
     }
     
-    insertStarred = (userId: string, fileId: string) => {
-        return this.fileRepository.insertStarred(userId, fileId)
-    }
-
 }
 
 export default FileService;

@@ -8,6 +8,7 @@ import fs from 'fs';
 declare module "express-serve-static-core" {
     interface Request {
         user?: string | JwtPayload;
+        token?: string
     }
 }
 
@@ -34,6 +35,7 @@ const verifyToken = (req: Request, res: Response, next: NextFunction) => {
         }
 
         req.user = decoded;
+        req.token = token;
         next()
     })
 }

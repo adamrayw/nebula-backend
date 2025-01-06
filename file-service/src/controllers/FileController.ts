@@ -48,8 +48,9 @@ class UploadController {
             const user = req.user as { id: string } | undefined;
             const searchQuery = req.query.s as string;
             const offsetQuery = req.query.offset as string;
+            const token = req as unknown as { token: string }
 
-            const { data, totalFile, lastPage } = await this.fileService.getAllFiles(user?.id ?? '', searchQuery, offsetQuery)
+            const { data, totalFile, lastPage } = await this.fileService.getAllFiles(user?.id ?? '', searchQuery, offsetQuery, token.token)
 
             res.status(StatusCodes.OK).json({
                 status: 200,
@@ -97,27 +98,6 @@ class UploadController {
             res.status(StatusCodes.OK).json({
                 status: 200,
                 data: totalFileSize
-            })
-        } catch (error) {
-            if (error instanceof Error) {
-                res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-                    status: 500,
-                    message: error.message
-                })
-            }
-        }
-    }
-    
-    insertStarred = async (req: Request, res: Response) => {
-        try {
-            const userId = req.user as { id: string }
-            const fileId = req.params.fileId
-
-            const insertedStarred = await this.fileService.insertStarred(userId.id, fileId)
-
-            res.status(StatusCodes.OK).json({
-                status: 200,
-                data: insertedStarred
             })
         } catch (error) {
             if (error instanceof Error) {

@@ -1,5 +1,6 @@
 import File, { FilesAttributes } from '../db/models/File';
 import { Op } from 'sequelize';
+import axios from 'axios';
 
 class UploadRespository {
     upload = async (data: FilesAttributes) => {
@@ -12,7 +13,7 @@ class UploadRespository {
         })
     }
 
-    getAllFiles = async (userId: string, search: string, offset: string) => {
+    getAllFiles = async (userId: string, search: string, offset: string, token: string) => {
 
         const whereClause: any = {
             userId
@@ -28,9 +29,17 @@ class UploadRespository {
             where: whereClause
         })
 
+        const getStarredFile = await axios.get(`http://localhost:8082/api/file/starred/${userId}`, {
+            headers: {
+                "Authorization": `Bearer ${token}`
+            }
+        })
+        const starredData = getStarredFile.data.data;
+
         const lastPage = Math.ceil(totalFile.count / 10)
 
-        const data = await File.findAll({
+        let data = await File.findAll({
+            raw: true,
             where: whereClause,
             limit: 10,
             offset,
@@ -40,6 +49,13 @@ class UploadRespository {
                 ]
             ]
         });
+
+
+        // merging file and starred data
+        data = data.map((file: FilesAttributes) => ({
+            ...file,
+            starred: starredData.find((star: { fileId: string }) => star.fileId === file.id) || null
+        }))
 
         return {
             data,
@@ -62,14 +78,6 @@ class UploadRespository {
         return totalFile
     }
 
-    insertStarred = async (userId: string, fileId: string) => {
-        const insertToStarred = await File.create({
-            userId,
-            fileId
-        })
-
-        return insertToStarred;
-    }
 }
 
 export default UploadRespository;
