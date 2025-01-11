@@ -2,62 +2,58 @@ import { Op } from "sequelize";
 import Starred from "../db/models/Starred";
 
 class StarredRepository {
+  insertStarred = async (userId: string, fileId: string) => {
+    const checkStarred = await Starred.findOne({
+      where: {
+        fileId: {
+          [Op.eq]: fileId,
+        },
+      },
+    });
 
-    insertStarred = async (userId: string, fileId: string) => {
-
-        const checkStarred = await Starred.findOne({
-            where: {
-                fileId: {
-                    [Op.eq]: fileId
-                }
-            }
-        })
-
-        if (checkStarred) {
-            return 409
-        }
-
-        const insertToStarred = await Starred.create({
-            userId,
-            fileId
-        })
-
-        return insertToStarred;
+    if (checkStarred) {
+      return 409;
     }
 
-    removeStarred = async (fileId: string) => {
+    const insertToStarred = await Starred.create({
+      userId,
+      fileId,
+    });
 
-        const checkStarred = await Starred.findOne({
-            where: {
-                fileId: {
-                    [Op.eq]: fileId
-                }
-            }
-        })
+    return insertToStarred;
+  };
 
-        if (!checkStarred) {
-            return 404
-        }
+  removeStarred = async (fileId: string) => {
+    const checkStarred = await Starred.findOne({
+      where: {
+        fileId: {
+          [Op.eq]: fileId,
+        },
+      },
+    });
 
-        const removeToStarred = await Starred.destroy({
-            where: {
-                fileId
-            }
-        })
-
-        return removeToStarred;
+    if (!checkStarred) {
+      return 404;
     }
 
-    getStarreds = async (userId: string) => {
-        const getStarredData = await Starred.findAll({
-            where: {
-                userId
-            }
-        })
+    const removeToStarred = await Starred.destroy({
+      where: {
+        fileId,
+      },
+    });
 
-        return getStarredData;
-    }
+    return removeToStarred;
+  };
 
+  getStarreds = async (userId: string) => {
+    const getStarredData = await Starred.findAll({
+      where: {
+        userId,
+      },
+    });
+
+    return getStarredData;
+  };
 }
 
 export default StarredRepository;
