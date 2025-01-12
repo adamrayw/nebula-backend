@@ -2,7 +2,7 @@ import { createClient } from "redis";
 import hash from "object-hash";
 import { NextFunction, Request, Response } from "express";
 
-interface RedisClient extends ReturnType<typeof createClient> {}
+interface RedisClient extends ReturnType<typeof createClient> { }
 
 let redisClient: RedisClient | undefined = undefined;
 
@@ -51,21 +51,38 @@ async function writeData(key: any, data: any, options: any) {
   }
 }
 
-async function readData(key: any) {
-  let cachedValue = undefined;
+async function readData(keys: string[]) {
+  let cachedValue: string[] = [];
+
   if (isRedisWorking()) {
     // try to get the cached response from redis
-    return await redisClient?.get(key);
+    return await Promise.all(
+      keys.map(async (key: string) => {
+        try {
+          return await redisClient?.get(key);
+        } catch (e) {
+          console.error(`Failed to delete key=${key}`, e);
+        }
+      })
+    );
   }
 
-  return cachedValue;
+  return cachedValue
 }
 
-async function deleteData(key: any) {
+async function deleteData(keys: string[]) {
   let cachedValue = undefined;
 
   if (isRedisWorking()) {
-    return await redisClient?.del(key);
+    await Promise.all(
+      keys.map(async (key: string) => {
+        try {
+          await redisClient?.del(key);
+        } catch (e) {
+          console.error(`Failed to delete key=${key}`, e);
+        }
+      })
+    );
   }
 
   return cachedValue;
@@ -78,18 +95,21 @@ export function redisCachingMiddleware(
 ) {
   return async (req: Request, res: Response, next: NextFunction) => {
     if (isRedisWorking() && req.query.s === "" && req.query.offset === "0") {
+      const keys: string[] = [];
       const key = requestToKey(req);
 
-      // if there is some cached data, retrieve it and return it
-      const cachedValue = await readData(key);
+      keys.push(key);
 
-      if (cachedValue) {
+      // if there is some cached data, retrieve it and return it
+      const cachedValue = await readData(keys);
+
+      if (cachedValue.length > 0 && cachedValue[0]) {
         try {
           // if it is JSON data, then return it
-          res.json(JSON.parse(cachedValue));
+          res.json(JSON.parse(cachedValue[0]));
         } catch {
           // if it is not JSON data, then return it
-          res.send(cachedValue);
+          res.send(cachedValue[0]);
         }
       } else {
         // override how res.send behaves
@@ -120,15 +140,16 @@ export function writeThought() {
     if (isRedisWorking()) {
       // membuat custom key, kalau menggunakan requestToKey path akan mengarah ke file/uploadFile
       const userId = typeof req.user !== "string" ? req.user?.id : undefined;
-      let key = undefined;
+      let key: string[] = [];
       if (
         req.path === "/file/uploadFile" ||
         req.path.startsWith("/file/deleteFile") ||
         req.path.startsWith("/file/starred")
       ) {
-        key = `/file/getFiles@${userId}`;
+        key.push(`/file/getFiles@${userId}`);
+        key.push(`/file/starredFiles@${userId}`);
       } else {
-        key = `/user/getUserInfo@${userId}`;
+        key.push(`/user/getUserInfo@${userId}`);
       }
 
       const cachedData = await readData(key);
