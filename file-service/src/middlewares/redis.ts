@@ -2,7 +2,7 @@ import { createClient } from "redis";
 import hash from "object-hash";
 import { NextFunction, Request, Response } from "express";
 
-interface RedisClient extends ReturnType<typeof createClient> {}
+interface RedisClient extends ReturnType<typeof createClient> { }
 
 let redisClient: RedisClient | undefined = undefined;
 
@@ -52,10 +52,11 @@ async function writeData(key: any, data: any, options: any) {
 }
 
 async function readData(keys: string[]) {
-  let cachedValue = undefined;
+  let cachedValue: string[] = [];
+
   if (isRedisWorking()) {
     // try to get the cached response from redis
-    await Promise.all(
+    return await Promise.all(
       keys.map(async (key: string) => {
         try {
           return await redisClient?.get(key);
@@ -66,7 +67,7 @@ async function readData(keys: string[]) {
     );
   }
 
-  return cachedValue;
+  return cachedValue
 }
 
 async function deleteData(keys: string[]) {
@@ -104,13 +105,13 @@ export function redisCachingMiddleware(
       // if there is some cached data, retrieve it and return it
       const cachedValue = await readData(keys);
 
-      if (cachedValue) {
+      if (cachedValue.length > 0 && cachedValue[0]) {
         try {
           // if it is JSON data, then return it
-          res.json(JSON.parse(cachedValue));
+          res.json(JSON.parse(cachedValue[0]));
         } catch {
           // if it is not JSON data, then return it
-          res.send(cachedValue);
+          res.send(cachedValue[0]);
         }
       } else {
         // override how res.send behaves

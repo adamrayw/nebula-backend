@@ -62,7 +62,7 @@ class UploadController {
         status: 200,
         message: "Get all starred files successfully!",
         data,
-        totalFile: totalFile.count,
+        totalFile,
         lastPage,
       });
     } catch (error) {
