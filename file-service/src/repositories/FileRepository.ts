@@ -85,9 +85,9 @@ class UploadRespository {
       };
     }
 
-    const totalFile = await File.findAndCountAll({
-      where: whereClause,
-    });
+    // const totalFile = await File.findAndCountAll({
+    //   where: whereClause,
+    // });
 
     const getStarredFile = await axios.get(
       `http://localhost:8082/api/file/starred/${userId}`,
@@ -99,8 +99,7 @@ class UploadRespository {
     );
     const starredData = getStarredFile.data.data;
 
-    const lastPage = Math.ceil(totalFile.count / 10);
-
+    
     let data = await File.findAll({
       raw: true,
       where: whereClause,
@@ -113,7 +112,7 @@ class UploadRespository {
     data = data.map((file: FilesAttributes) => ({
       ...file,
       starred:
-        starredData.find(
+      starredData.find(
           (star: { fileId: string }) => star.fileId === file.id
         ) || null,
     }));
@@ -122,6 +121,10 @@ class UploadRespository {
     data = data.filter(
       (file: FilesAttributes & { starred: any }) => file.starred !== null
     );
+    
+    const totalFile = data.length
+
+    const lastPage = Math.ceil(totalFile / 10);
 
     return {
       data,
