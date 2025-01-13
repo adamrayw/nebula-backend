@@ -90,7 +90,7 @@ class UploadRespository {
     // });
 
     const getStarredFile = await axios.get(
-      `http://localhost:8082/api/file/starred/${userId}`,
+      `http://localhost:8082/api/file/starred/${userId}?offset=${offset}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -99,33 +99,31 @@ class UploadRespository {
     );
     const starredData = getStarredFile.data.data;
 
-    
-    let data = await File.findAll({
+    let data = await File.findAndCountAll({
       raw: true,
       where: whereClause,
-      limit: 10,
+      // limit: 10,
       offset,
-      order: [["createdAt", "DESC"]],
     });
 
+
     // merging file and starred data
-    data = data.map((file: FilesAttributes) => ({
+    data = data.rows.map((file: FilesAttributes) => ({
       ...file,
       starred:
-      starredData.find(
+        starredData.find(
           (star: { fileId: string }) => star.fileId === file.id
         ) || null,
     }));
-
+    
     // Tampilkan jika hanya dibintangi saja
     data = data.filter(
       (file: FilesAttributes & { starred: any }) => file.starred !== null
     );
+
+    const totalFile = getStarredFile.data.totalFile;
+    const lastPage = getStarredFile.data.lastPage
     
-    const totalFile = data.length
-
-    const lastPage = Math.ceil(totalFile / 10);
-
     return {
       data,
       lastPage,
