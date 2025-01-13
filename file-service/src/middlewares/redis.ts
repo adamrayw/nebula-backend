@@ -73,8 +73,6 @@ async function readData(keys: string[]) {
 async function deleteData(keys: string[]) {
   let cachedValue = undefined;
 
-  console.log(keys);
-
   if (isRedisWorking()) {
     await Promise.all(
       keys.map(async (key: string) => {
