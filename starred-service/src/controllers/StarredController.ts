@@ -12,13 +12,16 @@ class StarredController {
     getStarreds = async (req: Request, res: Response) => {
         try {
             const userId = req.user as { id: string }
+            const offsetQuery = req.query.offset as string
 
-            const getStarredData = await this.starredService.getStarreds(userId.id)
+            const {getStarredData, totalFile, lastPage} = await this.starredService.getStarreds(userId.id, offsetQuery)
 
             res.status(StatusCodes.OK).json({
                 status: 200,
                 message: "List of starred",
-                data: getStarredData
+                data: getStarredData.rows,
+                totalFile,
+                lastPage
             })
         } catch (error) {
             if (error instanceof Error) {
