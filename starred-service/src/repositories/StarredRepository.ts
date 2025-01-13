@@ -45,14 +45,21 @@ class StarredRepository {
     return removeToStarred;
   };
 
-  getStarreds = async (userId: string) => {
-    const getStarredData = await Starred.findAll({
+  getStarreds = async (userId: string, offset: string) => {
+    const getStarredData = await Starred.findAndCountAll({
+      raw: true,
       where: {
         userId,
       },
+      limit: 10,
+      offset,
+      order: [["createdAt", "DESC"]],
     });
 
-    return getStarredData;
+    const totalFile = getStarredData.count;
+    const lastPage = Math.ceil(totalFile / 10)
+
+    return { getStarredData, totalFile, lastPage };
   };
 }
 
