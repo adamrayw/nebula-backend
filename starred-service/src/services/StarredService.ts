@@ -7,8 +7,8 @@ class StarredService {
         this.starredRepository = new StarredRepository()
     }
 
-    getStarreds = (userId: string) => {
-        return this.starredRepository.getStarreds(userId)
+    getStarreds = (userId: string, offset: string) => {
+        return this.starredRepository.getStarreds(userId, offset)
     }
 
     insertStarred = (userId: string, fileId: string) => {
