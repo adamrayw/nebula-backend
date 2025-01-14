@@ -34,7 +34,7 @@ class UploadRespository {
     });
 
     const getStarredFile = await axios.get(
-      `http://localhost:8082/api/file/starred/${userId}`,
+      `http://localhost:8082/api/file/starredMyFiles/${userId}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -115,7 +115,7 @@ class UploadRespository {
           (star: { fileId: string }) => star.fileId === file.id
         ) || null,
     }));
-    
+
     // Tampilkan jika hanya dibintangi saja
     data = data.filter(
       (file: FilesAttributes & { starred: any }) => file.starred !== null
@@ -123,7 +123,7 @@ class UploadRespository {
 
     const totalFile = getStarredFile.data.totalFile;
     const lastPage = getStarredFile.data.lastPage
-    
+
     return {
       data,
       lastPage,
