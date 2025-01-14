@@ -61,6 +61,16 @@ class StarredRepository {
 
     return { getStarredData, totalFile, lastPage };
   };
+
+  getStarredsMyFile = async (userId: string) => {
+    const getStarredData = await Starred.findAll({
+      where: {
+        userId,
+      },
+    });
+
+    return getStarredData;
+  };
 }
 
 export default StarredRepository;
