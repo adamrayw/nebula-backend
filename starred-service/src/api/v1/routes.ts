@@ -18,5 +18,6 @@ router.get("/", (req: Request, res: Response) => {
 router.post('/file/starred/:fileId', [verifyToken, writeThought()], starredController.insertStarred)
 router.delete('/file/starred/:fileId', [verifyToken, writeThought()], starredController.removeStarred)
 router.get("/file/starred/:userId", [verifyToken, writeThought()], starredController.getStarreds)
+router.get("/file/starredMyFiles/:userId", [verifyToken, writeThought()], starredController.getStarredsMyFile)
 
 export default router;
