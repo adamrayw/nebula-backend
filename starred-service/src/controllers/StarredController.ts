@@ -9,6 +9,27 @@ class StarredController {
         this.starredService = new StarredService()
     }
 
+    getStarredsMyFile = async (req: Request, res: Response) => {
+        try {
+            const userId = req.user as { id: string }
+    
+            const getStarredData = await this.starredService.getStarredsMyFile(userId.id)
+    
+            res.status(StatusCodes.OK).json({
+                status: 200,
+                message: "List of starred",
+                data: getStarredData
+            })
+        } catch (error) {
+            if (error instanceof Error) {
+                res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+                    status: 500,
+                    message: error.message
+                })
+            }
+        }
+    }
+   
     getStarreds = async (req: Request, res: Response) => {
         try {
             const userId = req.user as { id: string }
