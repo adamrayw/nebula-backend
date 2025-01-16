@@ -37,6 +37,10 @@ class FileService {
   totalFileSize = (userId: string) => {
     return this.fileRepository.totalFileSize(userId);
   };
+  
+  getCategories = (userId: string) => {
+    return this.fileRepository.getCategories(userId);
+  };
 }
 
 export default FileService;

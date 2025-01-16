@@ -13,10 +13,11 @@ class UploadController {
   uploadFun = async (req: Request, res: Response) => {
     try {
       const file = req.file as unknown as FilesAttributes;
-      const { originalSize } = req.body;
+      const { originalSize, category } = req.body;
       const user = req.user as { id: string } | undefined;
       file.userId = user?.id ?? "";
       file.originalSize = Number(originalSize);
+      file.category = category;
 
       if (!req.file) {
         res.status(StatusCodes.BAD_REQUEST).json({
@@ -135,6 +136,26 @@ class UploadController {
       res.status(StatusCodes.OK).json({
         status: 200,
         data: totalFileSize,
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+          status: 500,
+          message: error.message,
+        });
+      }
+    }
+  };
+  
+  getCategories = async (req: Request, res: Response) => {
+    try {
+      const userId = req.user as { id: string } | undefined;
+
+      const categories = await this.fileService.getCategories(userId?.id ?? '');
+
+      res.status(StatusCodes.OK).json({
+        status: 200,
+        data: categories,
       });
     } catch (error) {
       if (error instanceof Error) {

@@ -1,17 +1,31 @@
 import File, { FilesAttributes } from "../db/models/File";
 import { Op } from "sequelize";
 import axios from "axios";
+import Category from "../db/models/Category";
 
 class UploadRespository {
   upload = async (data: FilesAttributes) => {
-    return await File.create({
+    // find category id
+
+    const findCategoryId = await Category.findOne({
+      raw: true,
+      where: {
+        slug: data.category
+      }
+    })
+
+    const createFile = await File.create({
       mimeType: data.mimetype,
       size: data.size === 0 ? data.originalSize : data.size,
       originalName: data.originalname,
       location: data.location,
       userId: data.userId,
+      categoryId: findCategoryId.id
     });
+    
+    return createFile
   };
+
 
   getAllFiles = async (
     userId: string,
@@ -34,7 +48,7 @@ class UploadRespository {
     });
 
     const getStarredFile = await axios.get(
-      `http://localhost:8082/api/file/starred/${userId}`,
+      `http://localhost:8082/api/file/starredMyFiles/${userId}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -115,7 +129,7 @@ class UploadRespository {
           (star: { fileId: string }) => star.fileId === file.id
         ) || null,
     }));
-    
+
     // Tampilkan jika hanya dibintangi saja
     data = data.filter(
       (file: FilesAttributes & { starred: any }) => file.starred !== null
@@ -123,7 +137,7 @@ class UploadRespository {
 
     const totalFile = getStarredFile.data.totalFile;
     const lastPage = getStarredFile.data.lastPage
-    
+
     return {
       data,
       lastPage,
@@ -144,6 +158,20 @@ class UploadRespository {
 
     return totalFile;
   };
+
+  getCategories = async (userId: string) => {
+    const categories = await Category.findAll({
+      include: {
+        model: File,
+        required: false,
+        where: {
+          userId
+        }
+      }
+    })
+
+    return categories
+  }
 }
 
 export default UploadRespository;

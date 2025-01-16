@@ -59,6 +59,12 @@ User.init({
 }, {
   sequelize,
   modelName: 'User',
+  indexes: [
+    {
+      unique: true,
+      fields: ['id']
+    }
+  ]
 });
 
 export default User;
