@@ -46,4 +46,7 @@ router.get(
   fileController.starredFiles
 );
 
+// category
+router.get('/file/categories', [verifyToken, redisCachingMiddleware()], fileController.getCategories)
+
 export default router;
