@@ -45,6 +45,7 @@ class StarredRepository {
     return removeToStarred;
   };
 
+  // untuk starred page
   getStarreds = async (userId: string, offset: string) => {
     const getStarredData = await Starred.findAndCountAll({
       raw: true,
@@ -62,6 +63,7 @@ class StarredRepository {
     return { getStarredData, totalFile, lastPage };
   };
 
+  // untuk my file page
   getStarredsMyFile = async (userId: string) => {
     const getStarredData = await Starred.findAll({
       where: {
