@@ -18,33 +18,11 @@ router.get("/", (req: Request, res: Response) => {
 });
 
 // file
-router.post(
-  "/file/uploadFile",
-  [upload, verifyToken, writeThought(), validateData(uploadFileSchema)],
-  fileController.uploadFun
-);
-router.get(
-  "/file/getFiles",
-  verifyToken,
-  redisCachingMiddleware(),
-  fileController.getAllFiles
-);
-router.delete(
-  "/file/deleteFile/:fileId",
-  verifyToken,
-  writeThought(),
-  fileController.deleteFile
-);
-router.get(
-  "/file/totalFileSize/:userId",
-  verifyToken,
-  fileController.totalFileSize
-);
-router.get(
-  "/file/starredFiles",
-  [verifyToken, redisCachingMiddleware()],
-  fileController.starredFiles
-);
+router.post("/file/uploadFile", [upload, verifyToken, writeThought(), validateData(uploadFileSchema)], fileController.uploadFun);
+router.get("/file/getFiles", verifyToken, redisCachingMiddleware(), fileController.getAllFiles);
+router.delete("/file/deleteFile/:fileId", verifyToken, writeThought(), fileController.deleteFile);
+router.get("/file/totalFileSize/:userId", verifyToken, fileController.totalFileSize);
+router.get("/file/starredFiles", [verifyToken, redisCachingMiddleware()], fileController.starredFiles);
 
 // category
 router.get('/file/categories', [verifyToken, redisCachingMiddleware()], fileController.getCategories)
