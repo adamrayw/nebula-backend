@@ -13,19 +13,24 @@ export interface FilesAttributes {
   originalname: string;
   mimetype: string;
   size: number;
+  category: string;
   location: string;
   originalSize: number;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 class File extends Model<FilesAttributes> implements FilesAttributes {
-  public id?: string;
-  public userId!: string;
-  public originalname!: string;
-  public mimetype!: string;
-  public size!: number;
-  public location!: string;
-  public originalSize!: number;
-
+  declare id: string;
+  declare userId: string;
+  declare originalname: string;
+  declare mimetype: string;
+  declare size: number;
+  declare category: string;
+  declare location: string;
+  declare originalSize: number;
+  declare createdAt?: Date;
+  declare updatedAt?: Date;
 }
 
 File.init({
@@ -48,10 +53,15 @@ File.init({
   },
   location: {
     type: DataType.STRING
+  },
+  categoryId: {
+    type: DataType.UUID,
+    defaultValue: null
   }
 }, {
   sequelize,
   modelName: 'File',
+  timestamps: true
 });
 
 export default File;
