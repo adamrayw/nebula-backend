@@ -94,7 +94,7 @@ export function redisCachingMiddleware(
   }
 ) {
   return async (req: Request, res: Response, next: NextFunction) => {
-    if (isRedisWorking() && req.query.s === "" && req.query.offset === "0") {
+    if (isRedisWorking() && req.query.s === "" && req.query.offset === "0" && req.query.sortBy === 'createdAt' && req.query.sortOrder === 'DESC') {
       const keys: string[] = [];
       const key = requestToKey(req);
 
