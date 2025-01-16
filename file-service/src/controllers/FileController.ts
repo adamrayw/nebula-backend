@@ -82,12 +82,16 @@ class UploadController {
       const searchQuery = req.query.s as string;
       const offsetQuery = req.query.offset as string;
       const token = req as unknown as { token: string };
+      const sortBy = req.query.sortBy as string
+      const sortOrder = req.query.sortOrder as string
 
       const { data, totalFile, lastPage } = await this.fileService.getAllFiles(
         user?.id ?? "",
         searchQuery,
         offsetQuery,
-        token.token
+        token.token,
+        sortBy,
+        sortOrder
       );
 
       res.status(StatusCodes.OK).json({

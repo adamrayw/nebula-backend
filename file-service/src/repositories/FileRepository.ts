@@ -22,7 +22,7 @@ class UploadRespository {
       userId: data.userId,
       categoryId: findCategoryId.id
     });
-    
+
     return createFile
   };
 
@@ -31,7 +31,9 @@ class UploadRespository {
     userId: string,
     search: string,
     offset: string,
-    token: string
+    token: string,
+    sortBy: string,
+    sortOrder: string
   ) => {
     const whereClause: any = {
       userId,
@@ -58,13 +60,15 @@ class UploadRespository {
     const starredData = getStarredFile.data.data;
 
     const lastPage = Math.ceil(totalFile.count / 10);
+    console.log(sortBy)
+    console.log(sortOrder)
 
     let data = await File.findAll({
       raw: true,
       where: whereClause,
       limit: 10,
       offset,
-      order: [["createdAt", "DESC"]],
+      order: [[sortBy as string, (sortOrder || 'asc') as string ]],
     });
 
     // merging file and starred data

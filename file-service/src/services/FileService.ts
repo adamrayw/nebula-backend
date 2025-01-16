@@ -16,9 +16,11 @@ class FileService {
     userId: string,
     search: string,
     offset: string,
-    token: string
+    token: string,
+    sortBy: string,
+    sortOrder: string
   ) => {
-    return this.fileRepository.getAllFiles(userId, search, offset, token);
+    return this.fileRepository.getAllFiles(userId, search, offset, token, sortBy, sortOrder);
   };
 
   getStarredFiles = (
@@ -37,7 +39,7 @@ class FileService {
   totalFileSize = (userId: string) => {
     return this.fileRepository.totalFileSize(userId);
   };
-  
+
   getCategories = (userId: string) => {
     return this.fileRepository.getCategories(userId);
   };
