@@ -15,10 +15,6 @@ class UserService {
         return this.userRepository.getLimit(userId)
     }
 
-    updateLimit(userId: string, limit: number) {
-        return this.userRepository.updateLimit(userId, limit)
-    }
-
 }
 
 export default UserService;
