@@ -9,6 +9,7 @@ class UserController {
         this.userService = new UserService()
         this.getLimit = this.getLimit.bind(this)
         this.getUserInfo = this.getUserInfo.bind(this)
+        this.updateLimit = this.updateLimit.bind(this)
     }
 
     async getLimit(req: Request, res: Response) {
@@ -45,6 +46,30 @@ class UserController {
                 res.status(StatusCodes.OK).json({
                     status: 200,
                     message: 'Get Limit Success!',
+                    data
+                })
+            }
+
+        } catch (error) {
+            if (error instanceof Error) {
+                res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+                    status: 500,
+                    message: error.message
+                })
+                console.log(error)
+            }
+        }
+    }
+
+    async updateLimit(req: Request, res: Response) {
+        try {
+            const { limit, userId } = req.body;
+            const data = await this.userService.updateLimit(userId, limit)
+
+            if (data) {
+                res.status(StatusCodes.OK).json({
+                    status: 200,
+                    message: 'Update Limit Success!',
                     data
                 })
             }
