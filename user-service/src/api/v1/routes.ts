@@ -25,6 +25,5 @@ router.post("/user/register", validateData(RegisterSchema), authController.creat
 // user
 router.get('/user/getLimit', verifyToken, userController.getLimit)
 router.get('/user/getUserInfo', [verifyToken, writeThought()], userController.getUserInfo)
-router.put('/user/updateLimit', [writeThought()], userController.updateLimit)
 
 export default router;

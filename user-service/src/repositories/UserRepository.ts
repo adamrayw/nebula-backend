@@ -4,7 +4,6 @@ import User from '../db/models/User';
 class UserRespository {
     getLimit = async (userId: string) => {
         return await User.findOne({
-            raw: true,
             where: {
                 id: userId
             },
@@ -44,18 +43,6 @@ class UserRespository {
             console.error(error);
             throw error;
         }
-    }
-
-    updateLimit = async (userId: string, limit: number) => {
-        const getCurrentLimit = await this.getLimit(userId);
-        console.log(Number(getCurrentLimit.limit) + Number(limit))
-        return await User.update({
-            limit: Number(getCurrentLimit.limit) + Number(limit)
-        }, {
-            where: {
-                id: userId
-            }
-        })
     }
 }
 
