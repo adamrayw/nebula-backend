@@ -2,14 +2,14 @@
   "development": {
     "username": "postgres",
     "password": "root",
-    "database": "nebula_dev_files",
+    "database": "file_db",
     "host": "localhost",
     "dialect": "postgres"
   },
   "production": {
     "username": "postgres",
     "password": "root",
-    "database": "nebula_dev_files",
+    "database": "file_db",
     "host": "localhost",
     "dialect": "postgres"
   }

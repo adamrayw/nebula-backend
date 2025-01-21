@@ -62,6 +62,7 @@ export class PaymentService {
       where: {
         userId,
       },
+      order: [['createdAt', 'DESC']],
     });
 
     return getPayments;

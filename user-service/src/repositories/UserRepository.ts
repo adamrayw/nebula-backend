@@ -44,6 +44,23 @@ class UserRespository {
             throw error;
         }
     }
+
+    updateLimit = async (userId: string, limit: number) => {
+        const getCurrentLimit = await User.findOne({
+            raw: true,
+            where: {
+                id: userId
+            },
+        })
+
+        return await User.update({
+            limit: Number(getCurrentLimit.limit) + Number(limit)
+        }, {
+            where: {
+                id: userId
+            }
+        })
+    }
 }
 
 export default UserRespository;
