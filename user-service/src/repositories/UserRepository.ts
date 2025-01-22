@@ -11,47 +11,34 @@ class UserRespository {
         })
     }
 
+    getUserById = async (userId: string) => {
+        return await User.findByPk(userId);
+    }
+
     getUserInfo = async (userId: string, token: string) => {
-        try {
-            // Ambil data user
-            const user = await User.findByPk(userId);
-
-            if (!user) {
-                return null;
-            }
-
-            const response = await axios.get(`http://localhost:8080/api/file/totalFileSize/${userId}`, {
-                headers: {
-                    "Authorization": `Bearer ${token}`
-                },
-                timeout: 5000
-            }).catch((err) => {
-                console.error("Failed to fetch file-service : ", err.errors)
-                return {
-                    data: {
-                        data: 0
-                    }
-                }
-            })
-
-            // Gabungkan hasil user dengan total ukuran file
+        // Ambil data user
+        const response = await axios.get(`http://localhost:8080/api/file/totalFileSize/${userId}`, {
+            headers: {
+                "Authorization": `Bearer ${token}`
+            },
+            timeout: 5000
+        }).catch((err) => {
+            console.error("Failed to fetch file-service : ", err.errors)
             return {
-                ...user.toJSON(),
-                totalFileSize: response.data.data,
-            };
-        } catch (error) {
-            console.error(error);
-            throw error;
-        }
+                data: {
+                    data: 0
+                }
+            }
+        })
+
+        // Gabungkan hasil user dengan total ukuran file
+        return {
+            totalFileSize: response.data.data,
+        };
     }
 
     updateLimit = async (userId: string, limit: number) => {
-        const getCurrentLimit = await User.findOne({
-            raw: true,
-            where: {
-                id: userId
-            },
-        })
+        const getCurrentLimit = await this.getLimit(userId);
 
         return await User.update({
             limit: Number(getCurrentLimit.limit) + Number(limit)
