@@ -14,10 +14,12 @@ class UserService {
             throw new Error('User not found')
         }
 
-        let {totalFileSize} = await this.userRepository.getUserInfo(userId, token)
+        let { totalFileSize } = await this.userRepository.getUserInfo(userId, token)
+
+        const { limit } = await this.getLimit(userId)
 
         return {
-            ...findUser.toJSON(),
+            limit,
             totalFileSize
         }
     }
