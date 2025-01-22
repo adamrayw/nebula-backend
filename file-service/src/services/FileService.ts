@@ -12,7 +12,7 @@ class FileService {
     return this.fileRepository.upload(data);
   };
 
-  getAllFiles = (
+  getAllFiles = async (
     userId: string,
     search: string,
     offset: string,
@@ -20,7 +20,23 @@ class FileService {
     sortBy: string,
     sortOrder: string
   ) => {
-    return this.fileRepository.getAllFiles(userId, search, offset, token, sortBy, sortOrder);
+    let { starredData, data, totalFile } = await this.fileRepository.getAllFiles(userId, search, offset, token, sortBy, sortOrder);
+
+    data = data.map((file: FilesAttributes) => ({
+      ...file,
+      starred:
+        starredData.find(
+          (star: { fileId: string }) => star.fileId === file.id
+        ) || null,
+    }));
+
+    const lastPage = Math.ceil(totalFile.count / 10);
+
+    return {
+      data,
+      lastPage,
+      totalFile
+    };
   };
 
   getStarredFiles = (

@@ -57,11 +57,8 @@ class UploadRespository {
         },
       }
     );
-    const starredData = getStarredFile.data.data;
 
-    const lastPage = Math.ceil(totalFile.count / 10);
-    console.log(sortBy)
-    console.log(sortOrder)
+    const starredData = getStarredFile.data.data;
 
     let data = await File.findAll({
       raw: true,
@@ -71,19 +68,10 @@ class UploadRespository {
       order: [[sortBy as string, (sortOrder || 'asc') as string ]],
     });
 
-    // merging file and starred data
-    data = data.map((file: FilesAttributes) => ({
-      ...file,
-      starred:
-        starredData.find(
-          (star: { fileId: string }) => star.fileId === file.id
-        ) || null,
-    }));
-
     return {
       data,
-      lastPage,
       totalFile,
+      starredData,
     };
   };
 
