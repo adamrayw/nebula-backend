@@ -2,7 +2,8 @@ import { Op } from "sequelize";
 import Starred from "../db/models/Starred";
 
 class StarredRepository {
-  insertStarred = async (userId: string, fileId: string) => {
+
+  findOne = async (fileId: string) => {
     const checkStarred = await Starred.findOne({
       where: {
         fileId: {
@@ -11,38 +12,24 @@ class StarredRepository {
       },
     });
 
-    if (checkStarred) {
-      return 409;
-    }
+    return checkStarred;
+  };
 
-    const insertToStarred = await Starred.create({
+
+  insertStarred = async (userId: string, fileId: string) => {
+    return await Starred.create({
       userId,
       fileId,
     });
 
-    return insertToStarred;
   };
 
   removeStarred = async (fileId: string) => {
-    const checkStarred = await Starred.findOne({
-      where: {
-        fileId: {
-          [Op.eq]: fileId,
-        },
-      },
-    });
-
-    if (!checkStarred) {
-      return 404;
-    }
-
-    const removeToStarred = await Starred.destroy({
+    return await Starred.destroy({
       where: {
         fileId,
       },
     });
-
-    return removeToStarred;
   };
 
   // untuk starred page
@@ -57,10 +44,7 @@ class StarredRepository {
       order: [["createdAt", "DESC"]],
     });
 
-    const totalFile = getStarredData.count;
-    const lastPage = Math.ceil(totalFile / 10)
-
-    return { getStarredData, totalFile, lastPage };
+    return getStarredData;
   };
 
   // untuk my file page
