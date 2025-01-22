@@ -39,13 +39,36 @@ class FileService {
     };
   };
 
-  getStarredFiles = (
+  getStarredFiles = async (
     userId: string,
     search: string,
     offset: string,
     token: string
   ) => {
-    return this.fileRepository.getStarredFiles(userId, search, offset, token);
+    let { data, starredData, getStarredFile } = await this.fileRepository.getStarredFiles(userId, search, offset, token);
+
+    // merging file and starred data
+    data = data.rows.map((file: FilesAttributes) => ({
+      ...file,
+      starred:
+        starredData.find(
+          (star: { fileId: string }) => star.fileId === file.id
+        ) || null,
+    }));
+
+    // Tampilkan jika hanya dibintangi saja
+    data = data.filter(
+      (file: FilesAttributes & { starred: any }) => file.starred !== null
+    );
+
+    const totalFile = getStarredFile.data.totalFile;
+    const lastPage = getStarredFile.data.lastPage
+
+    return {
+      data,
+      totalFile,
+      lastPage
+    }
   };
 
   deleteFile = (fileId: string) => {
