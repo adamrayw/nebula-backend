@@ -16,22 +16,17 @@ class UserRespository {
     }
 
     getUserInfo = async (userId: string, token: string) => {
-        // Ambil data user
+        // request ke file-service untuk mendapatkan total ukuran file
         const response = await axios.get(`http://localhost:8080/api/file/totalFileSize/${userId}`, {
             headers: {
                 "Authorization": `Bearer ${token}`
             },
             timeout: 5000
         }).catch((err) => {
-            console.error("Failed to fetch file-service : ", err.errors)
-            return {
-                data: {
-                    data: 0
-                }
-            }
+            console.error("Failed to fetch file-service : ", err.message)
+            throw new Error("File service is unreachable");
         })
 
-        // Gabungkan hasil user dengan total ukuran file
         return {
             totalFileSize: response.data.data,
         };
