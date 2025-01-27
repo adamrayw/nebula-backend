@@ -50,13 +50,16 @@ class UploadRespository {
     });
 
     const getStarredFile = await axios.get(
-      `http://localhost:8082/api/file/starredMyFiles/${userId}`,
+      `http://localhost:8082/api/file/starredMyFiles`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       }
-    );
+    ).catch((err) => {
+      console.error("Failed to fetch starred-service : ", err.message)
+      throw new Error("Starred service is unreachable");
+    })
 
     const starredData = getStarredFile.data.data;
 
@@ -65,7 +68,7 @@ class UploadRespository {
       where: whereClause,
       limit: 10,
       offset,
-      order: [[sortBy as string, (sortOrder || 'asc') as string ]],
+      order: [[sortBy as string, (sortOrder || 'asc') as string]],
     });
 
     return {
@@ -96,7 +99,7 @@ class UploadRespository {
     // });
 
     const getStarredFile = await axios.get(
-      `http://localhost:8082/api/file/starred/${userId}?offset=${offset}`,
+      `http://localhost:8082/api/file/starred?offset=${offset}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
