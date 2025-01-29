@@ -122,7 +122,17 @@ class UploadRespository {
     };
   };
 
-  deleteFile = async (fileId: string) => {
+  deleteFile = async (fileId: string, token:string) => {
+    const deleteStarred = await axios.delete('http://localhost:8082/api/file/starred/' + fileId, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    }).catch((err) => {
+      console.error("Failed to delete starred-service : ", err.message)
+      throw new Error("Starred service is unreachable");
+    })
+
     return await File.destroy({
       where: {
         id: fileId,

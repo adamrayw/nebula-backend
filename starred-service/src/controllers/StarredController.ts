@@ -90,13 +90,13 @@ class StarredController {
 
             const removeStarred = await this.starredService.removeStarred(fileId)
 
-            if(removeStarred === 404) {
-                res.status(StatusCodes.NOT_FOUND).json({
-                    status: 404,
-                    message: "File not found",
-                })
-                return
-            }
+            // if(removeStarred === 404) {
+            //     res.status(StatusCodes.NOT_FOUND).json({
+            //         status: 404,
+            //         message: "File not found",
+            //     })
+            //     return
+            // }
 
             res.status(StatusCodes.OK).json({
                 status: 200,

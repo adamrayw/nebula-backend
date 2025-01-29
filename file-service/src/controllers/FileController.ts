@@ -113,9 +113,10 @@ class UploadController {
 
   deleteFile = async (req: Request, res: Response) => {
     try {
+      const token = req as { token: string };
       const fileId = req.params.fileId as string;
 
-      const response = await this.fileService.deleteFile(fileId);
+      const response = await this.fileService.deleteFile(fileId, token.token);
 
       res.status(StatusCodes.OK).json({
         status: 200,
