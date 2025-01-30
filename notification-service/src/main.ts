@@ -22,4 +22,4 @@ async function bootstrap() {
   await microservice.listen();
   console.log(`Microservice is listening`);
 }
-bootstrap();
+void bootstrap();
