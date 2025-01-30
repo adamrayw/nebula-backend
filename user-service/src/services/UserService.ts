@@ -7,8 +7,21 @@ class UserService {
         this.userRepository = new UserRespository()
     }
 
-    getUserInfo(userId: string, token: string) {
-        return this.userRepository.getUserInfo(userId, token)
+    async getUserInfo(userId: string, token: string) {
+        const findUser = await this.userRepository.getUserById(userId)
+
+        if (!findUser) {
+            throw new Error('User not found')
+        }
+
+        let { totalFileSize } = await this.userRepository.getUserInfo(userId, token)
+
+        const { limit } = await this.getLimit(userId)
+
+        return {
+            limit,
+            totalFileSize
+        }
     }
 
     getLimit(userId: string) {

@@ -50,40 +50,31 @@ class UploadRespository {
     });
 
     const getStarredFile = await axios.get(
-      `http://localhost:8082/api/file/starredMyFiles/${userId}`,
+      `http://localhost:8082/api/file/starredMyFiles`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       }
-    );
-    const starredData = getStarredFile.data.data;
+    ).catch((err) => {
+      console.error("Failed to fetch starred-service : ", err.message)
+      throw new Error("Starred service is unreachable");
+    })
 
-    const lastPage = Math.ceil(totalFile.count / 10);
-    console.log(sortBy)
-    console.log(sortOrder)
+    const starredData = getStarredFile.data.data;
 
     let data = await File.findAll({
       raw: true,
       where: whereClause,
       limit: 10,
       offset,
-      order: [[sortBy as string, (sortOrder || 'asc') as string ]],
+      order: [[sortBy as string, (sortOrder || 'asc') as string]],
     });
-
-    // merging file and starred data
-    data = data.map((file: FilesAttributes) => ({
-      ...file,
-      starred:
-        starredData.find(
-          (star: { fileId: string }) => star.fileId === file.id
-        ) || null,
-    }));
 
     return {
       data,
-      lastPage,
       totalFile,
+      starredData,
     };
   };
 
@@ -108,7 +99,7 @@ class UploadRespository {
     // });
 
     const getStarredFile = await axios.get(
-      `http://localhost:8082/api/file/starred/${userId}?offset=${offset}`,
+      `http://localhost:8082/api/file/starred?offset=${offset}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -124,32 +115,24 @@ class UploadRespository {
       offset,
     });
 
-
-    // merging file and starred data
-    data = data.rows.map((file: FilesAttributes) => ({
-      ...file,
-      starred:
-        starredData.find(
-          (star: { fileId: string }) => star.fileId === file.id
-        ) || null,
-    }));
-
-    // Tampilkan jika hanya dibintangi saja
-    data = data.filter(
-      (file: FilesAttributes & { starred: any }) => file.starred !== null
-    );
-
-    const totalFile = getStarredFile.data.totalFile;
-    const lastPage = getStarredFile.data.lastPage
-
     return {
       data,
-      lastPage,
-      totalFile,
+      starredData,
+      getStarredFile,
     };
   };
 
-  deleteFile = async (fileId: string) => {
+  deleteFile = async (fileId: string, token:string) => {
+    const deleteStarred = await axios.delete('http://localhost:8082/api/file/starred/' + fileId, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    }).catch((err) => {
+      console.error("Failed to delete starred-service : ", err.message)
+      throw new Error("Starred service is unreachable");
+    })
+
     return await File.destroy({
       where: {
         id: fileId,

@@ -12,7 +12,7 @@ class FileService {
     return this.fileRepository.upload(data);
   };
 
-  getAllFiles = (
+  getAllFiles = async (
     userId: string,
     search: string,
     offset: string,
@@ -20,20 +20,59 @@ class FileService {
     sortBy: string,
     sortOrder: string
   ) => {
-    return this.fileRepository.getAllFiles(userId, search, offset, token, sortBy, sortOrder);
+    let { starredData, data, totalFile } = await this.fileRepository.getAllFiles(userId, search, offset, token, sortBy, sortOrder);
+
+    data = data.map((file: FilesAttributes) => ({
+      ...file,
+      starred:
+        starredData.find(
+          (star: { fileId: string }) => star.fileId === file.id
+        ) || null,
+    }));
+
+    const lastPage = Math.ceil(totalFile.count / 10);
+
+    return {
+      data,
+      lastPage,
+      totalFile
+    };
   };
 
-  getStarredFiles = (
+  getStarredFiles = async (
     userId: string,
     search: string,
     offset: string,
     token: string
   ) => {
-    return this.fileRepository.getStarredFiles(userId, search, offset, token);
+    let { data, starredData, getStarredFile } = await this.fileRepository.getStarredFiles(userId, search, offset, token);
+
+    // merging file and starred data
+    data = data.rows.map((file: FilesAttributes) => ({
+      ...file,
+      starred:
+        starredData.find(
+          (star: { fileId: string }) => star.fileId === file.id
+        ) || null,
+    }));
+
+    // Tampilkan jika hanya dibintangi saja
+    data = data.filter(
+      (file: FilesAttributes & { starred: any }) => file.starred !== null
+    );
+
+    const totalFile = getStarredFile.data.totalFile;
+    const lastPage = getStarredFile.data.lastPage
+
+    return {
+      data,
+      totalFile,
+      lastPage
+    }
   };
 
-  deleteFile = (fileId: string) => {
-    return this.fileRepository.deleteFile(fileId);
+  deleteFile = (fileId: string, token: string) => {
+    return this.fileRepository.deleteFile(fileId, token);
   };
 
   totalFileSize = (userId: string) => {

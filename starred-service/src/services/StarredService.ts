@@ -7,20 +7,45 @@ class StarredService {
         this.starredRepository = new StarredRepository()
     }
 
-    getStarreds = (userId: string, offset: string) => {
-        return this.starredRepository.getStarreds(userId, offset)
+    getStarreds = async (userId: string, offset: string) => {
+        const getStarredData = await this.starredRepository.getStarreds(userId, offset)
+
+        const totalFile = getStarredData.count;
+        const lastPage = Math.ceil(totalFile / 10)
+
+        return {
+            getStarredData,
+            totalFile,
+            lastPage
+        }
     }
-    
+
     getStarredsMyFile = (userId: string) => {
         return this.starredRepository.getStarredsMyFile(userId)
     }
 
-    insertStarred = (userId: string, fileId: string) => {
-        return this.starredRepository.insertStarred(userId, fileId)
+    insertStarred = async (userId: string, fileId: string) => {
+        const checkStarred = await this.starredRepository.findOne(fileId)
+
+        if (checkStarred) {
+            return 409;
+        }
+
+        const insertToStarred = await this.starredRepository.insertStarred(userId, fileId)
+
+        return insertToStarred
     }
-    
-    removeStarred = (fileId: string) => {
-        return this.starredRepository.removeStarred(fileId)
+
+    removeStarred = async (fileId: string) => {
+        const checkStarred = await this.starredRepository.findOne(fileId)
+
+        if (!checkStarred) {
+            return 404;
+        }
+
+        const removeFromStarred = await this.starredRepository.removeStarred(fileId)
+
+        return removeFromStarred;
     }
 
 }

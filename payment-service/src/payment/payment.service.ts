@@ -4,6 +4,9 @@ import { Payment } from './entities/payment.entity';
 import { InjectModel } from '@nestjs/sequelize';
 import generateOrderId from 'src/utils/generateTransaksiId';
 import { HttpService } from '@nestjs/axios';
+import { CreatePaymentDto } from './dto/create-payment.dto';
+import { catchError, firstValueFrom } from 'rxjs';
+import { AxiosError } from 'axios';
 
 @Injectable()
 export class PaymentService {
@@ -13,42 +16,54 @@ export class PaymentService {
     private readonly httpService: HttpService,
   ) {}
 
-  private async requestMidtrans(orderId: string, price: number) {
+  private async requestMidtrans(orderId: string, price: number): Promise<any> {
     const midtransUrl = process.env.MIDTRANS_URL;
     const base64ServerKey = Buffer.from(
       `${process.env.MIDTRANS_SERVER_KEY}:`,
     ).toString('base64');
 
-    return this.httpService.axiosRef.post(
-      midtransUrl,
-      {
-        payment_type: 'bank_transfer',
-        transaction_details: {
-          order_id: orderId,
-          gross_amount: price,
-        },
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Basic ${base64ServerKey}`,
-        },
-      },
+    const { data } = await firstValueFrom(
+      this.httpService
+        .post(
+          midtransUrl,
+          {
+            payment_type: 'bank_transfer',
+            transaction_details: {
+              order_id: orderId,
+              gross_amount: price,
+            },
+          },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Basic ${base64ServerKey}`,
+            },
+          },
+        )
+        .pipe(
+          catchError((error: AxiosError) => {
+            throw new InternalServerErrorException(error.message);
+          }),
+        ),
     );
+    return data;
   }
 
-  async create(userId: string, price: number, type: string, limit: number) {
+  async create(createPaymentDto: CreatePaymentDto) {
     const transaksiId = generateOrderId();
-    const midtransData = await this.requestMidtrans(transaksiId, price);
+    const midtransData = await this.requestMidtrans(
+      transaksiId,
+      createPaymentDto.price,
+    );
 
     const payment = await this.paymentModel.create({
-      userId,
-      paymentUrl: midtransData.data.redirect_url,
+      userId: createPaymentDto.userId,
+      paymentUrl: midtransData.redirect_url,
       transaksiId,
-      type,
+      type: createPaymentDto.type,
       status: 'pending',
-      price,
-      limit,
+      price: createPaymentDto.price,
+      limit: createPaymentDto.limit,
     });
 
     return {
