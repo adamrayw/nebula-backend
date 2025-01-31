@@ -10,6 +10,7 @@ import { dataBaseConfig } from './database/database.config';
 import { PaymentModule } from './payment/payment.module';
 import { PricingModule } from './pricing/pricing.module';
 import { AuthMiddleware } from './common/middleware/auth.middleware';
+import { RabbitmqModule } from './rabbitmq/rabbitmq.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { AuthMiddleware } from './common/middleware/auth.middleware';
     PaymentModule,
     SequelizeModule.forRoot(dataBaseConfig),
     PricingModule,
+    RabbitmqModule,
   ],
   controllers: [],
 })
