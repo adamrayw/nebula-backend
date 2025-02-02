@@ -34,5 +34,6 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
       },
     ]),
   ],
+  exports: [ClientsModule],
 })
 export class RabbitmqModule {}
