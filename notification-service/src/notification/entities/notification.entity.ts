@@ -7,10 +7,16 @@ import {
   Table,
 } from 'sequelize-typescript';
 
+interface NotificationData {
+  userId: string;
+  message: string;
+  status: string;
+}
+
 @Table({
-  tableName: 'Notifications',
+  tableName: 'Notification',
 })
-export class Notification extends Model<Notification> {
+export class Notification extends Model<NotificationData> {
   @PrimaryKey
   @Default(DataType.UUIDV4)
   @Column({

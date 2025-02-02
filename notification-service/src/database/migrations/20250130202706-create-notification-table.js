@@ -18,8 +18,9 @@ module.exports = {
         allowNull: false
       },
       status: {
-        type: Sequelize.BOOLEAN,
-        defaultValue: false
+        type: Sequelize.ENUM('unread', 'read'),
+        defaultValue: 'unread',
+        allowNull: false
       },
       createdAt: {
         type: Sequelize.DATE,
