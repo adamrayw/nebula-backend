@@ -8,7 +8,9 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
         name: 'NOTIFICATION_SERVICE',
         transport: Transport.RMQ,
         options: {
-          urls: [process.env.RABBITMQ_URL],
+          urls: [
+            'amqps://xdffzfle:pr60yVCQXdjLXB2MJO7GFR7ebyI8tTVZ@jaragua.lmq.cloudamqp.com/xdffzfle',
+          ],
           queue: 'notification_queue',
           queueOptions: {
             durable: false,
@@ -19,7 +21,9 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
         name: 'PAYMENT_SERVICE',
         transport: Transport.RMQ,
         options: {
-          urls: [process.env.RABBITMQ_URL],
+          urls: [
+            'amqps://xdffzfle:pr60yVCQXdjLXB2MJO7GFR7ebyI8tTVZ@jaragua.lmq.cloudamqp.com/xdffzfle',
+          ],
           queue: 'payment_queue',
           queueOptions: {
             durable: false,
@@ -28,5 +32,6 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
       },
     ]),
   ],
+  exports: [ClientsModule],
 })
 export class RabbitmqModule {}
