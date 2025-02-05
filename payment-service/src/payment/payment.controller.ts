@@ -21,7 +21,7 @@ export class PaymentController {
   @Post()
   @UseInterceptors(TransformInterceptor)
   @ResponseMessage('Payment created successfully')
-  create(@Body() createPaymentDto: CreatePaymentDto) {
+  async create(@Body() createPaymentDto: CreatePaymentDto) {
     return this.paymentService.create(createPaymentDto);
   }
 

@@ -1,0 +1,27 @@
+import { Controller, Get, Req, UseInterceptors } from '@nestjs/common';
+import { EventPattern, Payload } from '@nestjs/microservices';
+import { NotificationData } from 'src/interfaces/notification-create.interface';
+import { NotificationService } from './notification.service';
+import { TransformInterceptor } from 'src/common/interceptors/transform.interceptor';
+import { ResponseMessage } from 'src/common/decorator/response-message.decorator';
+import { Request } from 'express';
+
+const SEND_NOTIFICATION_SERVICE = 'SEND_NOTIFICATION_SERVICE';
+
+@Controller('api/notification')
+export class NotificationController {
+  constructor(private readonly notificationService: NotificationService) {}
+
+  @EventPattern(SEND_NOTIFICATION_SERVICE)
+  getNotification(@Payload() data: NotificationData) {
+    return this.notificationService.saveNotification(data);
+  }
+
+  @Get('')
+  @UseInterceptors(TransformInterceptor)
+  @ResponseMessage('Notifications retrieved successfully')
+  getNotificationsByUserId(@Req() req: Request & { user: { id: string } }) {
+    const userId = req.user.id;
+    return this.notificationService.getNotificationsByUserId(userId);
+  }
+}

@@ -1,12 +1,20 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { UpdatePaymentStatusDto } from './dto/update-payment-status.dto';
 import { Payment } from './entities/payment.entity';
 import { InjectModel } from '@nestjs/sequelize';
 import generateOrderId from 'src/utils/generateTransaksiId';
 import { HttpService } from '@nestjs/axios';
 import { CreatePaymentDto } from './dto/create-payment.dto';
-import { catchError, firstValueFrom } from 'rxjs';
+import { catchError, firstValueFrom, lastValueFrom } from 'rxjs';
 import { AxiosError } from 'axios';
+import { ClientProxy } from '@nestjs/microservices';
+
+const SEND_NOTIFICATION_SERVICE = 'SEND_NOTIFICATION_SERVICE';
 
 @Injectable()
 export class PaymentService {
@@ -14,6 +22,9 @@ export class PaymentService {
     @InjectModel(Payment)
     private paymentModel: typeof Payment,
     private readonly httpService: HttpService,
+
+    @Inject('NOTIFICATION_SERVICE')
+    private readonly notificationClient: ClientProxy,
   ) {}
 
   private async requestMidtrans(orderId: string, price: number): Promise<any> {
@@ -51,6 +62,7 @@ export class PaymentService {
 
   async create(createPaymentDto: CreatePaymentDto) {
     const transaksiId = generateOrderId();
+
     const midtransData = await this.requestMidtrans(
       transaksiId,
       createPaymentDto.price,
@@ -65,6 +77,26 @@ export class PaymentService {
       price: createPaymentDto.price,
       limit: createPaymentDto.limit,
     });
+
+    if (!payment) {
+      throw new InternalServerErrorException('Failed to create payment');
+    }
+
+    // Send notification to notification service
+    try {
+      lastValueFrom(
+        this.notificationClient.emit(SEND_NOTIFICATION_SERVICE, {
+          userId: createPaymentDto.userId,
+          message: 'You just made payment link',
+          status: 'unread',
+        }),
+      );
+    } catch (error) {
+      console.log(error);
+      throw new ServiceUnavailableException(
+        'Notification service is unavailable, reason: ' + error.message,
+      );
+    }
 
     return {
       payment,
