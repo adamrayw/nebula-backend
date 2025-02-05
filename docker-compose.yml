@@ -1,0 +1,149 @@
+version: "3.9"
+services:
+  user-service:
+    build:
+      context: ./user-service
+    container_name: user-service
+    ports:
+      - "8081:8081"
+    env_file:
+      - .docker.env
+    volumes:
+      - ./user-service:/app
+      - /app/node_modules
+    command: npm run dev
+    depends_on:
+      - redis
+
+  file-service:
+    build:
+      context: ./file-service
+    container_name: file-service
+    ports:
+      - "8080:8080"
+    env_file:
+      - .docker.env
+    volumes:
+    - ./file-service:/app
+    - /app/node_modules
+    command: npm run dev
+    depends_on:
+      - redis
+
+  starred-service:
+    build:
+      context: ./starred-service
+    container_name: starred-service
+    ports:
+      - "8082:8082"
+    env_file:
+      - .docker.env
+    volumes:
+    - ./starred-service:/app
+    - /app/node_modules
+    command: npm run dev
+    depends_on:
+      - redis
+      
+  payment-service:
+    build:
+      context: ./payment-service
+    container_name: payment-service
+    ports:
+      - "8083:8083"
+    env_file:
+      - .docker.env
+    volumes:
+    - ./payment-service:/app
+    - /app/node_modules
+    command: npm run start:dev
+    depends_on:
+      - redis
+
+  notification-service:
+    build:
+      context: ./notification-service
+    container_name: notification-service
+    ports:
+      - "8084:8084"
+    env_file:
+      - .docker.env
+    volumes:
+    - ./notification-service:/app
+    - /app/node_modules
+    command: npm run start:dev
+    depends_on:
+      - redis
+
+  redis:
+    image: redis/redis-stack
+    container_name: redis
+    ports:
+      - "6379:6379"
+
+  db_user:
+    image: postgres:15
+    container_name: db_user
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: user_db
+    ports:
+      - "5431:5432"
+    volumes:
+      - user_data:/var/lib/postgresql/data
+
+  db_file:
+    image: postgres:15
+    container_name: db_file
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: file_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - file_data:/var/lib/postgresql/data
+
+  db_starred:
+    image: postgres:15
+    container_name: db_starred
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: starred_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - starred_data:/var/lib/postgresql/data
+
+  db_payment:
+    image: postgres:15
+    container_name: db_payment
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: payment_db
+    ports:
+      - "5434:5432"
+    volumes:
+      - payment_data:/var/lib/postgresql/data
+
+  db_notification:
+    image: postgres:15
+    container_name: db_notification
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: notification_db
+    ports:
+      - "5435:5432"
+    volumes:
+      - notification_data:/var/lib/postgresql/data
+
+volumes:
+  user_data:
+  file_data:
+  starred_data:
+  payment_data:
+  notification_data:
