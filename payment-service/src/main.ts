@@ -9,7 +9,7 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe());
   app.useGlobalFilters(new HttpExceptionFilter());
   app.enableCors();
-  await app.listen(process.env.PORT ?? 8083);
+  await app.listen(process.env.PAYMENT_PORT ?? 8083);
 
   const microservice = app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.RMQ,
