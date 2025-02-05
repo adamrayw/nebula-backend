@@ -7,7 +7,7 @@ services:
     ports:
       - "8081:8081"
     env_file:
-      - ./user-service/.env
+      - .docker.env
     volumes:
       - ./user-service:/app
       - /app/node_modules
@@ -22,7 +22,7 @@ services:
     ports:
       - "8080:8080"
     env_file:
-      - ./file-service/.env
+      - .docker.env
     volumes:
     - ./file-service:/app
     - /app/node_modules
@@ -37,7 +37,7 @@ services:
     ports:
       - "8082:8082"
     env_file:
-      - ./starred-service/.env
+      - .docker.env
     volumes:
     - ./starred-service:/app
     - /app/node_modules
@@ -52,9 +52,24 @@ services:
     ports:
       - "8083:8083"
     env_file:
-      - ./payment-service/.env
+      - .docker.env
     volumes:
     - ./payment-service:/app
+    - /app/node_modules
+    command: npm run start:dev
+    depends_on:
+      - redis
+
+  notification-service:
+    build:
+      context: ./notification-service
+    container_name: notification-service
+    ports:
+      - "8084:8084"
+    env_file:
+      - .docker.env
+    volumes:
+    - ./notification-service:/app
     - /app/node_modules
     command: npm run start:dev
     depends_on:
@@ -114,8 +129,21 @@ services:
     volumes:
       - payment_data:/var/lib/postgresql/data
 
+  db_notification:
+    image: postgres:15
+    container_name: db_notification
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: notification_db
+    ports:
+      - "5435:5432"
+    volumes:
+      - notification_data:/var/lib/postgresql/data
+
 volumes:
   user_data:
   file_data:
   starred_data:
   payment_data:
+  notification_data:
