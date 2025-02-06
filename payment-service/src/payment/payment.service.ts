@@ -2,6 +2,7 @@ import {
   Inject,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { UpdatePaymentStatusDto } from './dto/update-payment-status.dto';
@@ -127,7 +128,7 @@ export class PaymentService {
     });
 
     if (!findTransaksiId) {
-      return 'Transaksi ID not found';
+      throw new NotFoundException('Transaction not found');
     }
 
     if (updatePaymentDto.transaction_status === 'settlement') {
@@ -138,6 +139,22 @@ export class PaymentService {
           limit: findTransaksiId.limit,
         },
       );
+
+      // Send notification to notification service
+      try {
+        lastValueFrom(
+          this.notificationClient.emit(SEND_NOTIFICATION_SERVICE, {
+            userId: findTransaksiId.userId,
+            message: 'Your payment has been successfully!',
+            status: 'unread',
+          }),
+        );
+      } catch (error) {
+        console.log(error);
+        throw new ServiceUnavailableException(
+          'Notification service is unavailable, reason: ' + error.message,
+        );
+      }
 
       if (updateLimitUser.data.status !== 200) {
         throw new InternalServerErrorException('Failed to update user limit');
