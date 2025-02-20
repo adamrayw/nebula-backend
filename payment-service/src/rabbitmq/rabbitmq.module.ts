@@ -1,34 +1,24 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 
 @Module({
   imports: [
-    ClientsModule.register([
+    ClientsModule.registerAsync([
       {
         name: 'NOTIFICATION_SERVICE',
-        transport: Transport.RMQ,
-        options: {
-          urls: [
-            'amqps://xdffzfle:pr60yVCQXdjLXB2MJO7GFR7ebyI8tTVZ@jaragua.lmq.cloudamqp.com/xdffzfle',
-          ],
-          queue: 'notification_queue',
-          queueOptions: {
-            durable: false,
+        imports: [ConfigModule],
+        inject: [ConfigService],
+        useFactory: (configService: ConfigService) => ({
+          transport: Transport.RMQ,
+          options: {
+            urls: [configService.get<string>('RABBITMQ_URL')],
+            queue: 'notification_queue',
+            queueOptions: {
+              durable: false,
+            },
           },
-        },
-      },
-      {
-        name: 'PAYMENT_SERVICE',
-        transport: Transport.RMQ,
-        options: {
-          urls: [
-            'amqps://xdffzfle:pr60yVCQXdjLXB2MJO7GFR7ebyI8tTVZ@jaragua.lmq.cloudamqp.com/xdffzfle',
-          ],
-          queue: 'payment_queue',
-          queueOptions: {
-            durable: false,
-          },
-        },
+        }),
       },
     ]),
   ],

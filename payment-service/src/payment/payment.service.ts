@@ -85,7 +85,7 @@ export class PaymentService {
 
     // Send notification to notification service
     try {
-      lastValueFrom(
+      await lastValueFrom(
         this.notificationClient.emit(SEND_NOTIFICATION_SERVICE, {
           userId: createPaymentDto.userId,
           message: 'You just made payment link',
@@ -93,10 +93,7 @@ export class PaymentService {
         }),
       );
     } catch (error) {
-      console.log(error);
-      throw new ServiceUnavailableException(
-        'Notification service is unavailable, reason: ' + error.message,
-      );
+      console.error('Failed to send notification:', error.message);
     }
 
     return {

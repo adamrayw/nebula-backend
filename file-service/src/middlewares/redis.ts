@@ -138,9 +138,10 @@ export function redisCachingMiddleware(
 export function writeThought() {
   return async (req: Request, res: Response, next: NextFunction) => {
     if (isRedisWorking()) {
-      // membuat custom key, kalau menggunakan requestToKey path akan mengarah ke file/uploadFile
+
       const userId = typeof req.user !== "string" ? req.user?.id : undefined;
       let key: string[] = [];
+
       if (
         req.path === "/file/uploadFile" ||
         req.path.startsWith("/file/deleteFile") ||
