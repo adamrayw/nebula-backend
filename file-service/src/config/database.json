@@ -3,7 +3,7 @@
     "username": "postgres",
     "password": "root",
     "database": "file_db",
-    "host": "db_file",
+    "host": "localhost",
     "dialect": "postgres"
   },
   "production": {
