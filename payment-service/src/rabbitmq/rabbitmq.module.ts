@@ -16,6 +16,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
             queue: 'notification_queue',
             queueOptions: {
               durable: false,
+              deadLetterExchange: 'dlx',
             },
           },
         }),
