@@ -16,8 +16,14 @@ const SEND_NOTIFICATION_SERVICE = 'SEND_NOTIFICATION_SERVICE';
 export class NotificationController {
   constructor(private readonly notificationService: NotificationService) {}
 
-  @EventPattern(SEND_NOTIFICATION_SERVICE)
-  getNotification(@Payload() data: NotificationData) {
+  @EventPattern('create_link_success')
+  getNotificationCreateLinkSuccess(@Payload() data: NotificationData) {
+    console.log(data)
+    return this.notificationService.saveNotification(data);
+  }
+  
+  @EventPattern('payment_success')
+  getPaymentSuccess(@Payload() data: NotificationData) {
     return this.notificationService.saveNotification(data);
   }
 
