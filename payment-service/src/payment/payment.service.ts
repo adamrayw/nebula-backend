@@ -15,7 +15,7 @@ import { catchError, firstValueFrom, lastValueFrom } from 'rxjs';
 import { AxiosError } from 'axios';
 import { ClientProxy } from '@nestjs/microservices';
 
-const SEND_NOTIFICATION_SERVICE = 'SEND_NOTIFICATION_SERVICE';
+// const SEND_NOTIFICATION_SERVICE = 'SEND_NOTIFICATION_SERVICE';
 
 @Injectable()
 export class PaymentService {
@@ -86,7 +86,7 @@ export class PaymentService {
     // Send notification to notification service
     try {
       await lastValueFrom(
-        this.notificationClient.emit(SEND_NOTIFICATION_SERVICE, {
+        this.notificationClient.emit('create_link_success', {
           userId: createPaymentDto.userId,
           message: 'You just made payment link',
           status: 'unread',
@@ -140,7 +140,7 @@ export class PaymentService {
       // Send notification to notification service
       try {
         lastValueFrom(
-          this.notificationClient.emit(SEND_NOTIFICATION_SERVICE, {
+          this.notificationClient.emit('payment_success', {
             userId: findTransaksiId.userId,
             message: 'Your payment has been successfully!',
             status: 'unread',

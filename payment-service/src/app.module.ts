@@ -10,6 +10,7 @@ import { PaymentModule } from './payment/payment.module';
 import { PricingModule } from './pricing/pricing.module';
 import { AuthMiddleware } from './common/middleware/auth.middleware';
 import { Payment } from './payment/entities/payment.entity';
+import { RabbitmqModule } from './rabbitmq/rabbitmq.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { Payment } from './payment/entities/payment.entity';
     }),
     PaymentModule,
     PricingModule,
+    RabbitmqModule,
   ],
   controllers: [],
 })
