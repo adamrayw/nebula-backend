@@ -20,6 +20,7 @@ async function bootstrap() {
       queue: 'notification_queue',
       queueOptions: {
         durable: false,
+        deadLetterExchange: 'dlx',
       },
     },
   });
