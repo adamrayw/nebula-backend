@@ -5,6 +5,10 @@ import dotenv from "dotenv";
 import cors from "cors";
 import { checkDbConnection } from "./config/db";
 import { initializeRedisClient } from "./middlewares/redis";
+const { connectRabbitMQ } = require('./config/rabbitmq');
+const { startConsumer } = require('./services/consumer');
+const { sendToQueue } = require('./services/producer');
+
 dotenv.config()
 
 async function initializeExpressServer() {
@@ -22,9 +26,21 @@ async function initializeExpressServer() {
     // connect to redis
     await initializeRedisClient()
 
-    app.listen(port, () => {
-        console.log(`[server]: Server is running at http://localhost:${port}`);
-    })
+    const startServer = async () => {
+        await connectRabbitMQ();
+        // const payload = JSON.stringify({ 
+        //     pattern: 'activity_queue',
+        //     data: 'Cihuy' 
+        // });
+
+        // await sendToQueue(payload);
+
+        app.listen(port, () => {
+            console.log(`[server]: Server is running at http://localhost:${port}`);
+        })
+    }
+
+    startServer()
 }
 
 initializeExpressServer().then().catch((e) => console.log(e))
