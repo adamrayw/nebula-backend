@@ -2,6 +2,7 @@ import File, { FilesAttributes } from "../db/models/File";
 import { Op } from "sequelize";
 import axios from "axios";
 import Category from "../db/models/Category";
+import { sendToQueue } from "../services/producer";
 
 class UploadRespository {
   upload = async (data: FilesAttributes) => {
@@ -22,6 +23,17 @@ class UploadRespository {
       userId: data.userId,
       categoryId: findCategoryId.id
     });
+
+    if (createFile) {
+      await sendToQueue(JSON.stringify({
+        pattern: 'activity_queue',
+        data: {
+          userId: data.userId,
+          type: 'upload',
+          description: `Anda mengupload file ${data.originalname}`,
+        },
+      }));
+    }
 
     return createFile
   };
@@ -122,7 +134,7 @@ class UploadRespository {
     };
   };
 
-  deleteFile = async (fileId: string, token:string) => {
+  deleteFile = async (fileId: string, token: string) => {
     const deleteStarred = await axios.delete('http://localhost:8082/api/file/starred/' + fileId, {
       headers: {
         'Content-Type': 'application/json',
@@ -132,6 +144,27 @@ class UploadRespository {
       console.error("Failed to delete starred-service : ", err.message)
       throw new Error("Starred service is unreachable");
     })
+
+    if(deleteStarred.status !== 200) {
+      throw new Error("Failed to delete starred-service")
+    }
+
+    // get file for user id
+    const file = await File.findOne({
+      raw: true,
+      where: {
+        id: fileId,
+      },
+    });
+
+    await sendToQueue(JSON.stringify({
+      pattern: 'activity_queue',
+      data: {
+        userId: file.userId,
+        type: 'delete',
+        description: `Anda menghapus file ${file.originalName}`,
+      },
+    }));
 
     return await File.destroy({
       where: {
