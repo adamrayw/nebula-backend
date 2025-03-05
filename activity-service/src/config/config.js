@@ -2,7 +2,7 @@ module.exports = {
   development: {
     username: 'postgres',
     password: 'root',
-    database: 'notification_db',
+    database: 'activity_db',
     host: 'localhost',
     dialect: 'postgres',
   },

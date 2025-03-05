@@ -2,7 +2,7 @@
   "development": {
     "username": "postgres",
     "password": "root",
-    "database": "nebula_dev_starred",
+    "database": "starred_db",
     "host": "localhost",
     "dialect": "postgres"
   },
