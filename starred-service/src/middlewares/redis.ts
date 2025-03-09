@@ -30,8 +30,11 @@ export async function initializeRedisClient() {
 
 function requestToKey(req: Request) {
   const userId = typeof req.user !== "string" ? req.user?.id : undefined;
-
-  return `${req.path}@${userId}`;
+  if (req.path.startsWith('/file/getFiles') && req.query.s === '' && req.query.offset === '0') {
+    return `${req.path}?offset=${req.query.offset}@${userId}`;
+  } else if (req.path.startsWith('/file/starredFiles')) {
+    return `${req.path}@${userId}`;
+  }
 }
 
 function isRedisWorking() {
@@ -77,7 +80,7 @@ async function deleteData(keys: string[]) {
     await Promise.all(
       keys.map(async (key: string) => {
         try {
-          await redisClient?.del(key);
+          const statusDelete = await redisClient?.del(key);
         } catch (e) {
           console.error(`Failed to delete key=${key}`, e);
         }
@@ -94,11 +97,13 @@ export function redisCachingMiddleware(
   }
 ) {
   return async (req: Request, res: Response, next: NextFunction) => {
-    if (isRedisWorking() && req.query.s === "" && req.query.offset === "0") {
+    if (isRedisWorking()) {
       const keys: string[] = [];
       const key = requestToKey(req);
 
-      keys.push(key);
+      if (key) {
+        keys.push(key);
+      }
 
       // if there is some cached data, retrieve it and return it
       const cachedValue = await readData(keys);
@@ -138,25 +143,29 @@ export function redisCachingMiddleware(
 export function writeThought() {
   return async (req: Request, res: Response, next: NextFunction) => {
     if (isRedisWorking()) {
-      // membuat custom key, kalau menggunakan requestToKey path akan mengarah ke file/uploadFile
       const userId = typeof req.user !== "string" ? req.user?.id : undefined;
+      const offset = req.query.offset;
+
+      // menyimpan key yang akan dihapus
       let key: string[] = [];
+
       if (
         req.path === "/file/uploadFile" ||
         req.path.startsWith("/file/deleteFile") ||
         req.path.startsWith("/file/starred")
       ) {
-        key.push(`/file/getFiles@${userId}`);
-        key.push(`/file/starredFiles@${userId}`);
+        key.push(`/file/getFiles?offset=${offset}@${userId}`);
+        key.push(`/file/starredFiles?offset=${offset}@${userId}`);
       } else {
         key.push(`/user/getUserInfo@${userId}`);
       }
 
+      // Membaca data yang sudah di cache
       const cachedData = await readData(key);
 
+      // Jika cachedData true, lakukan operasi delete key
       if (cachedData) {
-        // Jika cachedData true, lakukan operasi delete key
-        const deleteKey = await deleteData(key);
+        await deleteData(key);
 
         redisCachingMiddleware();
 
