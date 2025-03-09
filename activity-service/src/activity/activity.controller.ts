@@ -19,7 +19,6 @@ export class ActivityController {
 
   @EventPattern('activity_queue')
   saveActivity(@Payload() data: any) {
-    console.log(data);
     return this.activityService.saveActivity(data);
   }
 }

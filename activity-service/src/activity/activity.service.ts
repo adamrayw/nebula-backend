@@ -20,7 +20,6 @@ export class ActivityService {
     }
 
     async saveActivity(data: ActivityData) {
-        console.log(data)
         return await this.activityModel.create(data);
     }
 }
