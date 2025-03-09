@@ -25,6 +25,6 @@ router.get("/file/totalFileSize/:userId", verifyToken, fileController.totalFileS
 router.get("/file/starredFiles", [verifyToken, redisCachingMiddleware()], fileController.starredFiles);
 
 // category
-router.get('/file/categories', [verifyToken, redisCachingMiddleware()], fileController.getCategories)
+router.get('/file/categories', [verifyToken], fileController.getCategories)
 
 export default router;
