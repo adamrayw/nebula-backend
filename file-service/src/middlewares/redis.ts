@@ -13,6 +13,13 @@ export async function initializeRedisClient() {
     // create redis client
     redisClient = createClient({
       url: redisURL,
+      socket: {
+        keepAlive: 30000, // set keepAlive to 30 seconds
+        reconnectStrategy: (times: number) => {
+          // reconnect after 50 ms, 100 ms, 150 ms, 200 ms, etc...
+          return Math.min(times * 50, 2000);
+        },
+      }
     }).on("error", (e: any) => {
       console.error(`Failed to create the Redis client with error : `);
       console.error(e);
@@ -31,7 +38,11 @@ export async function initializeRedisClient() {
 function requestToKey(req: Request) {
   const userId = typeof req.user !== "string" ? req.user?.id : undefined;
 
-  return `${req.path}@${userId}`;
+  if (req.path.startsWith('/file/getFiles') && req.query.s === '' && req.query.offset === '0' && req.query.sortBy === 'createdAt' && req.query.sortOrder === 'DESC') {
+    return `${req.path}?offset=${req.query.offset}@${userId}`;
+  } else if (req.path.startsWith('/file/starredFiles')) {
+    return `${req.path}?offset=${req.query.offset}@${userId}`;
+  }
 }
 
 function isRedisWorking() {
@@ -44,7 +55,7 @@ async function writeData(key: any, data: any, options: any) {
   if (isRedisWorking()) {
     try {
       // write data to the Redis cache
-      await redisClient?.set(key, data, options);
+      await redisClient?.set(key, data, );
     } catch (e) {
       console.error(`Failed to cache data for key=${key}`, e);
     }
@@ -74,6 +85,7 @@ async function deleteData(keys: string[]) {
   let cachedValue = undefined;
 
   if (isRedisWorking()) {
+    
     await Promise.all(
       keys.map(async (key: string) => {
         try {
@@ -94,11 +106,13 @@ export function redisCachingMiddleware(
   }
 ) {
   return async (req: Request, res: Response, next: NextFunction) => {
-    if (isRedisWorking() && req.query.s === "" && req.query.offset === "0" && req.query.sortBy === 'createdAt' && req.query.sortOrder === 'DESC') {
+    if (isRedisWorking()) {
       const keys: string[] = [];
       const key = requestToKey(req);
 
-      keys.push(key);
+      if (key) {
+        keys.push(key);
+      }
 
       // if there is some cached data, retrieve it and return it
       const cachedValue = await readData(keys);
@@ -124,7 +138,7 @@ export function redisCachingMiddleware(
             writeData(key, data, options).then();
           }
 
-          return res.send(data);
+        return res.send(data);
         };
 
         next();
@@ -140,6 +154,7 @@ export function writeThought() {
     if (isRedisWorking()) {
 
       const userId = typeof req.user !== "string" ? req.user?.id : undefined;
+      const offset = req.query.offset || 0;
       let key: string[] = [];
 
       if (
@@ -147,7 +162,7 @@ export function writeThought() {
         req.path.startsWith("/file/deleteFile") ||
         req.path.startsWith("/file/starred")
       ) {
-        key.push(`/file/getFiles@${userId}`);
+        key.push(`/file/getFiles?offset=${offset}@${userId}`);
         key.push(`/file/starredFiles@${userId}`);
       } else {
         key.push(`/user/getUserInfo@${userId}`);
