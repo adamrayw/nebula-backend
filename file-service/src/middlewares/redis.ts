@@ -38,7 +38,7 @@ export async function initializeRedisClient() {
 function requestToKey(req: Request) {
   const userId = typeof req.user !== "string" ? req.user?.id : undefined;
 
-  if (req.path.startsWith('/file/getFiles') && req.query.s === '' && req.query.offset === '0' && req.query.sortBy === 'createdAt' && req.query.sortOrder === 'DESC') {
+  if (req.path.startsWith('/file/getFiles') && req.query.s === '' && req.query.sortBy === 'createdAt' && req.query.sortOrder === 'DESC') {
     return `${req.path}?offset=${req.query.offset}@${userId}`;
   } else if (req.path.startsWith('/file/starredFiles')) {
     return `${req.path}?offset=${req.query.offset}@${userId}`;
@@ -53,12 +53,16 @@ function isRedisWorking() {
 
 async function writeData(key: any, data: any, options: any) {
   if (isRedisWorking()) {
-    try {
-      // write data to the Redis cache
-      await redisClient?.set(key, data, );
-    } catch (e) {
-      console.error(`Failed to cache data for key=${key}`, e);
+    if (key !== undefined) {
+      try {
+        // write data to the Redis cache
+        await redisClient?.set(key, data,);
+      } catch (e) {
+        console.error(`Failed to cache data for key=${key}`, e);
+      }
     }
+
+    return data;
   }
 }
 
@@ -85,7 +89,7 @@ async function deleteData(keys: string[]) {
   let cachedValue = undefined;
 
   if (isRedisWorking()) {
-    
+
     await Promise.all(
       keys.map(async (key: string) => {
         try {
@@ -138,7 +142,7 @@ export function redisCachingMiddleware(
             writeData(key, data, options).then();
           }
 
-        return res.send(data);
+          return res.send(data);
         };
 
         next();
