@@ -134,8 +134,8 @@ class UploadRespository {
     };
   };
 
-  deleteFile = async (fileId: string, token: string) => {
-    const deleteStarred = await axios.delete('http://localhost:8082/api/file/starred/' + fileId, {
+  deleteFile = async (fileId: string, token: string, offset: number) => {
+    const deleteStarred = await axios.delete(`http://localhost:8082/api/file/starred/${fileId}?offset=${offset}`, {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
