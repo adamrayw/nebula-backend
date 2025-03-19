@@ -71,8 +71,8 @@ class FileService {
     }
   };
 
-  deleteFile = (fileId: string, token: string) => {
-    return this.fileRepository.deleteFile(fileId, token);
+  deleteFile = (fileId: string, token: string, offset: number) => {
+    return this.fileRepository.deleteFile(fileId, token, offset);
   };
 
   totalFileSize = (userId: string) => {

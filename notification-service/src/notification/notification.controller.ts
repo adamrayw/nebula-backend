@@ -18,7 +18,6 @@ export class NotificationController {
 
   @EventPattern('create_link_success')
   getNotificationCreateLinkSuccess(@Payload() data: NotificationData) {
-    console.log(data)
     return this.notificationService.saveNotification(data);
   }
   

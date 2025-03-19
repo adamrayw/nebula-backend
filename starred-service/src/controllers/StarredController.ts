@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import StarredService from "../services/StarredService";
+import { redisClient } from "../config/redis";
 
 class StarredController {
     private readonly starredService: StarredService;
@@ -12,9 +13,9 @@ class StarredController {
     getStarredsMyFile = async (req: Request, res: Response) => {
         try {
             const userId = req.user as { id: string }
-    
+
             const getStarredData = await this.starredService.getStarredsMyFile(userId.id)
-    
+
             res.status(StatusCodes.OK).json({
                 status: 200,
                 message: "List of starred",
@@ -29,13 +30,13 @@ class StarredController {
             }
         }
     }
-   
+
     getStarreds = async (req: Request, res: Response) => {
         try {
             const userId = req.user as { id: string }
             const offsetQuery = req.query.offset as string
 
-            const {getStarredData, totalFile, lastPage} = await this.starredService.getStarreds(userId.id, offsetQuery)
+            const { getStarredData, totalFile, lastPage } = await this.starredService.getStarreds(userId.id, offsetQuery)
 
             res.status(StatusCodes.OK).json({
                 status: 200,
@@ -53,7 +54,7 @@ class StarredController {
             }
         }
     }
-    
+
     insertStarred = async (req: Request, res: Response) => {
         try {
             const userId = req.user as { id: string }
@@ -61,12 +62,39 @@ class StarredController {
 
             const insertedStarred = await this.starredService.insertStarred(userId.id, fileId)
 
-            if(insertedStarred === 409) {
+            if (insertedStarred === 409) {
                 res.status(StatusCodes.CONFLICT).json({
                     status: 409,
                     message: "File already starred",
                 })
                 return
+            }
+
+            const pattern = `files@${userId?.id}*`;
+            let cursor = 0;
+            let keys: string[] = [];
+
+            try {
+                do {
+                    const result = await redisClient?.scan(cursor, {
+                        MATCH: pattern,
+                        COUNT: 100,
+                    });
+
+                    cursor = result?.cursor ?? 0;
+                    if (result?.keys) {
+                        keys.push(...result.keys);
+                    }
+                } while (cursor !== 0);
+
+                if (keys.length > 0) {
+                    const deleteData = await redisClient?.del(keys);
+                    console.log("🚀 Data files deleted: ", deleteData);
+                } else {
+                    console.log(`🤷 No cache keys for user ${userId?.id}`);
+                }
+            } catch (error) {
+                console.error("❌ Error deleting cache keys: ", error);
             }
 
             res.status(StatusCodes.CREATED).json({
@@ -83,9 +111,10 @@ class StarredController {
             }
         }
     }
-    
+
     removeStarred = async (req: Request, res: Response) => {
         try {
+            const userId = req.user as { id: string }   
             const fileId = req.params.fileId
 
             const removeStarred = await this.starredService.removeStarred(fileId)
@@ -97,6 +126,33 @@ class StarredController {
             //     })
             //     return
             // }
+
+            const pattern = `files@${userId?.id}*`;
+            let cursor = 0;
+            let keys: string[] = [];
+
+            try {
+                do {
+                    const result = await redisClient?.scan(cursor, {
+                        MATCH: pattern,
+                        COUNT: 100,
+                    });
+
+                    cursor = result?.cursor ?? 0;
+                    if (result?.keys) {
+                        keys.push(...result.keys);
+                    }
+                } while (cursor !== 0);
+
+                if (keys.length > 0) {
+                    const deleteData = await redisClient?.del(keys);
+                    console.log("🚀 Data files deleted: ", deleteData);
+                } else {
+                    console.log(`🤷 No cache keys for user ${userId?.id}`);
+                }
+            } catch (error) {
+                console.error("❌ Error deleting cache keys: ", error);
+            }
 
             res.status(StatusCodes.OK).json({
                 status: 200,
