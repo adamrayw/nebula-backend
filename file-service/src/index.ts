@@ -7,8 +7,9 @@ import { checkDbConnection } from "./config/db";
 import { initializeRedisClient } from "./config/redis";
 import os from "os";
 import cluster from "cluster";
+import { startTrashCleanupJob } from "./cron-jobs/trashCleanupJob";
 const { connectRabbitMQ } = require('./config/rabbitmq');
-const { startConsumer } = require('./services/consumer');
+// const { startConsumer } = require('./services/consumer');
 
 dotenv.config();
 
@@ -31,8 +32,11 @@ async function startWorker() {
     // Hubungkan ke database
     await checkDbConnection();
 
+    // Jalankan cron job untuk membersihkan file yang sudah dihapus
+    startTrashCleanupJob();
+
     // Jalankan RabbitMQ Consumer
-    startConsumer();
+    // startConsumer();
 
     // Hubungkan ke RabbitMQ
     await connectRabbitMQ();
