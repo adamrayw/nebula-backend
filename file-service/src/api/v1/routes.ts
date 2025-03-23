@@ -26,4 +26,8 @@ router.get("/file/starredFiles", verifyToken, fileController.starredFiles);
 // category
 router.get('/file/categories', [verifyToken], fileController.getCategories)
 
+// trash
+router.get('/file/trash', [verifyToken], fileController.getTrashFile)
+router.put('/file/undoTrash/:fileId', [verifyToken], fileController.undoTrashFile)
+
 export default router;
