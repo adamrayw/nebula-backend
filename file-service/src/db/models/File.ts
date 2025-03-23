@@ -18,6 +18,7 @@ export interface FilesAttributes {
   originalSize: number;
   createdAt?: Date;
   updatedAt?: Date;
+  deletedAt?: Date;
 }
 
 class File extends Model<FilesAttributes> implements FilesAttributes {
@@ -31,6 +32,7 @@ class File extends Model<FilesAttributes> implements FilesAttributes {
   declare originalSize: number;
   declare createdAt?: Date;
   declare updatedAt?: Date;
+  declare deletedAt?: Date;
 }
 
 File.init({
@@ -57,7 +59,11 @@ File.init({
   categoryId: {
     type: DataType.UUID,
     defaultValue: null
-  }
+  },
+  deletedAt: {
+    type: DataType.DATE,
+    defaultValue: null
+  },
 }, {
   sequelize,
   modelName: 'File',
