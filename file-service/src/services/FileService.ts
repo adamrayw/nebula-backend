@@ -71,8 +71,8 @@ class FileService {
     }
   };
 
-  deleteFile = (fileId: string, token: string, offset: number) => {
-    return this.fileRepository.deleteFile(fileId, token, offset);
+  deleteFile = (fileId: string, token: string, offset: number, type: string) => {
+    return this.fileRepository.deleteFile(fileId, token, offset, type);
   };
 
   totalFileSize = (userId: string) => {
@@ -82,6 +82,18 @@ class FileService {
   getCategories = (userId: string) => {
     return this.fileRepository.getCategories(userId);
   };
+  
+  getTrashFile = (userId: string) => {
+    return this.fileRepository.getTrashFile(userId);
+  };
+
+  undoTrashFile = (fileId: string) => {
+    return this.fileRepository.undoTrashFile(fileId);
+  }
+  
+  deleteExpiredFiles = (fileId: string) => {
+    return this.fileRepository.deleteExpiredFiles();
+  }
 }
 
 export default FileService;

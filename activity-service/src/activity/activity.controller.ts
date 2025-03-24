@@ -1,5 +1,5 @@
 import { Controller, Get, Param, Query, UseInterceptors } from '@nestjs/common';
-import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices';
+import { Ctx, EventPattern, MessagePattern, Payload, RmqContext } from '@nestjs/microservices';
 import { ActivityService } from './activity.service';
 import { ResponseMessage } from 'src/common/decorator/response-message.decorator';
 import { TransformInterceptor } from 'src/common/interceptors/transform.interceptor';
@@ -18,7 +18,12 @@ export class ActivityController {
   }
 
   @EventPattern('activity_queue')
-  saveActivity(@Payload() data: any) {
+  saveActivity(@Payload() data: any, @Ctx() context: RmqContext) {
+
+    const channel = context.getChannelRef();
+    const originalMsg = context.getMessage();
+    channel.ack(originalMsg);
+
     return this.activityService.saveActivity(data);
   }
 }

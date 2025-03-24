@@ -28,33 +28,6 @@ class UploadController {
 
       const responseFromFiles = await this.fileService.upload(file);
 
-      const pattern = `files@${user?.id}*`;
-      let cursor = 0;
-      let keys: string[] = [];
-
-      try {
-        do {
-          const result = await redisClient?.scan(cursor, {
-            MATCH: pattern,
-            COUNT: 100,
-          });
-
-          cursor = result?.cursor ?? 0;
-          if (result?.keys) {
-            keys.push(...result.keys);
-          }
-        } while (cursor !== 0);
-
-        if (keys.length > 0) {
-          const deleteData = await redisClient?.del(keys);
-          console.log("🚀 Data files deleted: ", deleteData);
-        } else {
-          console.log(`🤷 No cache keys for user ${user?.id}`);
-        }
-      } catch (error) {
-        console.error("❌ Error deleting cache keys: ", error);
-      }
-
       if (responseFromFiles) {
         res.status(StatusCodes.OK).json({
           status: 200,
@@ -123,47 +96,20 @@ class UploadController {
         sortOrder
       );
 
-      const redisKey = `files@${user?.id}?search=${searchQuery}?offset=${offsetQuery}?sort=${sortBy}?order=${sortOrder}`;
-
-      const cachedData = await redisClient?.get(redisKey);
-
-      if (cachedData) {
-        console.log("💋 Data cached, fetching from cache");
-        res.status(StatusCodes.OK).send({
-          status: 200,
-          message: "Get all files successfully!",
-          data: JSON.parse(cachedData),
-          totalFile: totalFile.count,
-          lastPage,
-        });
-        return
-      } else if (!cachedData) {
-
-        // If search query is empty, cache the data
-        if (req.query.s === '') {
-          console.log("🤷 Data not cached, fetching from database");
-          const store = await redisClient?.set(redisKey, JSON.stringify(data), { EX: 60 });
-          console.log("✔  Status of storing data: ", store);
-
-          res.status(StatusCodes.OK).send({
-            status: 200,
-            message: "Get all files successfully!",
-            data,
-            totalFile: totalFile.count,
-            lastPage,
-          });
-          return
-        }
-      }
-
-      // If search query is not empty, do not cache the data
-      res.status(StatusCodes.OK).json({
+      res.locals.data = {
         status: 200,
         message: "Get all files successfully!",
         data,
         totalFile: totalFile.count,
         lastPage,
-      });
+      };
+
+      // Tambahkan header agar tidak ada cache di client
+      res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+      res.setHeader("Pragma", "no-cache");
+      res.setHeader("Expires", "0");
+
+      res.status(StatusCodes.OK).json(res.locals.data);
     } catch (error) {
       if (error instanceof Error) {
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
@@ -180,35 +126,9 @@ class UploadController {
       const fileId = req.params.fileId as string;
       const offset = req.query.offset as number | undefined;
       const user = req.user as { id: string } | undefined;
+      let type = req.query.type as string;
 
-      const response = await this.fileService.deleteFile(fileId, token.token, offset ?? 0);
-
-      const pattern = `files@${user?.id}?search=*?offset=${offset}?*`;
-      let cursor = 0;
-      let keys: string[] = [];
-
-      try {
-        do {
-          const result = await redisClient?.scan(cursor, {
-            MATCH: pattern,
-            COUNT: 100,
-          });
-
-          cursor = result?.cursor ?? 0;
-          if (result?.keys) {
-            keys.push(...result.keys);
-          }
-        } while (cursor !== 0);
-
-        if (keys.length > 0) {
-          const deleteData = await redisClient?.del(keys);
-          console.log("🚀 Data files deleted: ", deleteData);
-        } else {
-          console.log(`🤷 No cache keys for user ${user?.id}`);
-        }
-      } catch (error) {
-        console.error("❌ Error deleting cache keys: ", error);
-      }
+      const response = await this.fileService.deleteFile(fileId, token.token, offset ?? 0, type);
 
       res.status(StatusCodes.OK).json({
         status: 200,
@@ -253,6 +173,47 @@ class UploadController {
       res.status(StatusCodes.OK).json({
         status: 200,
         data: categories,
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+          status: 500,
+          message: error.message,
+        });
+      }
+    }
+  };
+
+  getTrashFile = async (req: Request, res: Response) => {
+    try {
+      const userId = req.user as { id: string } | undefined;
+
+      const trashFiles = await this.fileService.getTrashFile(userId?.id ?? '');
+
+      res.status(StatusCodes.OK).json({
+        status: 200,
+        data: trashFiles,
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+          status: 500,
+          message: error.message,
+        });
+      }
+    }
+  };
+
+  undoTrashFile = async (req: Request, res: Response) => {
+    try {
+      const fileId = req.params.fileId as string;
+      const user = req.user as { id: string } | undefined;
+
+      const undoTrash = await this.fileService.undoTrashFile(fileId ?? '');
+
+      res.status(StatusCodes.OK).json({
+        status: 200,
+        data: undoTrash,
       });
     } catch (error) {
       if (error instanceof Error) {
