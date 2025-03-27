@@ -1,20 +1,26 @@
 import File, { FilesAttributes } from "../db/models/File";
-import { Op, where } from "sequelize";
+import { Op, QueryTypes, Sequelize, where } from "sequelize";
 import axios from "axios";
-import Category from "../db/models/Category";
+import Category, { CategoryAttributes } from "../db/models/Category";
 import { sendToQueue } from "../services/producer";
 import { deleteObject } from "../config/s3";
+import { sequelize } from "../config/db";
 
 class UploadRespository {
   upload = async (data: FilesAttributes) => {
     // find category id
 
-    const findCategoryId = await Category.findOne({
-      raw: true,
-      where: {
-        slug: data.category
-      }
-    })
+    // const findCategoryId = await Category.findOne({
+    //   raw: true,
+    //   where: {
+    //     slug: data.category
+    //   }
+    // })
+
+    const findCategoryId = await sequelize.query<CategoryAttributes>(`SELECT * FROM "Categories" WHERE slug = :slug LIMIT 1`, {
+      type: QueryTypes.SELECT,
+      replacements: { slug: data.category }
+    });
 
     const createFile = await File.create({
       mimeType: data.mimetype,
@@ -22,7 +28,7 @@ class UploadRespository {
       originalName: data.originalname,
       location: data.location,
       userId: data.userId,
-      categoryId: findCategoryId.id
+      categoryId: findCategoryId[0]?.id
     });
 
     if (createFile) {
@@ -250,9 +256,9 @@ class UploadRespository {
       }
     })
 
-    if(expiredFiles.length === 0) {
+    if (expiredFiles.length === 0) {
       console.log("✅ No expired files found");
-      return; 
+      return;
     }
 
     for (const file of expiredFiles) {
