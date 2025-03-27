@@ -12,11 +12,19 @@ export async function cachingMiddleware(req: Request, res: Response, next: NextF
 
         const offsetQuery = req.query.offset ?? "";
         const searchQuery = req.query.s ?? "";
-        const sortBy = req.query.sort ?? "";
-        const sortOrder = req.query.order ?? "";
+        const sortBy = req.query.sortBy ?? "createdAt";
+        const sortOrder = req.query.sortOrder ?? "DESC";
 
-        // Format key agar lebih rapi
-        const redisKey = `files@${userId}&search=${searchQuery}&offset=${offsetQuery}&sort=${sortBy}&order=${sortOrder}`;
+        // Jika ada filter sortBy, sortOrder, searchQuery, atau offsetQuery, skip cache
+        // if (sortBy !== "createdBy" || sortOrder !== "DESC"|| searchQuery || offsetQuery !== "0") {
+        //     return next();
+        // }
+
+        
+        // Format key 
+        const redisKey = `files@${userId}&s=${searchQuery}&offset=${offsetQuery}&sortBy=${sortBy}&orderBy=${sortOrder}`;
+
+        console.log(`🔍 Checking cache for key: ${redisKey}`);
 
         // Cek apakah data ada di cache
         const cachedData = await redisClient?.get(redisKey);
