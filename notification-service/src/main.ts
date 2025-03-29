@@ -26,6 +26,6 @@ async function bootstrap() {
   });
 
   await microservice.listen();
-  console.log(`Microservice is listening`);
+  console.log(`📣 Microservice is listening`);
 }
 void bootstrap();

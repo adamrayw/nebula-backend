@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import FileService from "../services/FileService";
 import { FilesAttributes } from "../db/models/File";
+import { redisClient } from "../config/redis";
 
 class UploadController {
   private readonly fileService: FileService;
@@ -59,6 +60,7 @@ class UploadController {
           token.token
         );
 
+
       res.status(StatusCodes.OK).json({
         status: 200,
         message: "Get all starred files successfully!",
@@ -94,13 +96,20 @@ class UploadController {
         sortOrder
       );
 
-      res.status(StatusCodes.OK).json({
+      res.locals.data = {
         status: 200,
         message: "Get all files successfully!",
         data,
         totalFile: totalFile.count,
         lastPage,
-      });
+      };
+
+      // Tambahkan header agar tidak ada cache di client
+      res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+      res.setHeader("Pragma", "no-cache");
+      res.setHeader("Expires", "0");
+
+      res.status(StatusCodes.OK).json(res.locals.data);
     } catch (error) {
       if (error instanceof Error) {
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
@@ -115,8 +124,11 @@ class UploadController {
     try {
       const token = req as { token: string };
       const fileId = req.params.fileId as string;
+      const offset = req.query.offset as number | undefined;
+      const user = req.user as { id: string } | undefined;
+      let type = req.query.type as string;
 
-      const response = await this.fileService.deleteFile(fileId, token.token);
+      const response = await this.fileService.deleteFile(fileId, token.token, offset ?? 0, type);
 
       res.status(StatusCodes.OK).json({
         status: 200,
@@ -151,7 +163,7 @@ class UploadController {
       }
     }
   };
-  
+
   getCategories = async (req: Request, res: Response) => {
     try {
       const userId = req.user as { id: string } | undefined;
@@ -161,6 +173,47 @@ class UploadController {
       res.status(StatusCodes.OK).json({
         status: 200,
         data: categories,
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+          status: 500,
+          message: error.message,
+        });
+      }
+    }
+  };
+
+  getTrashFile = async (req: Request, res: Response) => {
+    try {
+      const userId = req.user as { id: string } | undefined;
+
+      const trashFiles = await this.fileService.getTrashFile(userId?.id ?? '');
+
+      res.status(StatusCodes.OK).json({
+        status: 200,
+        data: trashFiles,
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+          status: 500,
+          message: error.message,
+        });
+      }
+    }
+  };
+
+  undoTrashFile = async (req: Request, res: Response) => {
+    try {
+      const fileId = req.params.fileId as string;
+      const user = req.user as { id: string } | undefined;
+
+      const undoTrash = await this.fileService.undoTrashFile(fileId ?? '');
+
+      res.status(StatusCodes.OK).json({
+        status: 200,
+        data: undoTrash,
       });
     } catch (error) {
       if (error instanceof Error) {

@@ -1,19 +1,26 @@
 import File, { FilesAttributes } from "../db/models/File";
-import { Op } from "sequelize";
+import { Op, QueryTypes, Sequelize, where } from "sequelize";
 import axios from "axios";
-import Category from "../db/models/Category";
+import Category, { CategoryAttributes } from "../db/models/Category";
 import { sendToQueue } from "../services/producer";
+import { deleteObject } from "../config/s3";
+import { sequelize } from "../config/db";
 
 class UploadRespository {
   upload = async (data: FilesAttributes) => {
     // find category id
 
-    const findCategoryId = await Category.findOne({
-      raw: true,
-      where: {
-        slug: data.category
-      }
-    })
+    // const findCategoryId = await Category.findOne({
+    //   raw: true,
+    //   where: {
+    //     slug: data.category
+    //   }
+    // })
+
+    const findCategoryId = await sequelize.query<CategoryAttributes>(`SELECT * FROM "Categories" WHERE slug = :slug LIMIT 1`, {
+      type: QueryTypes.SELECT,
+      replacements: { slug: data.category }
+    });
 
     const createFile = await File.create({
       mimeType: data.mimetype,
@@ -21,7 +28,7 @@ class UploadRespository {
       originalName: data.originalname,
       location: data.location,
       userId: data.userId,
-      categoryId: findCategoryId.id
+      categoryId: findCategoryId[0]?.id
     });
 
     if (createFile) {
@@ -47,7 +54,7 @@ class UploadRespository {
     sortBy: string,
     sortOrder: string
   ) => {
-    const whereClause: any = {
+    let whereClause: any = {
       userId,
     };
 
@@ -77,7 +84,10 @@ class UploadRespository {
 
     let data = await File.findAll({
       raw: true,
-      where: whereClause,
+      where: {
+        deletedAt: null,
+        ...whereClause
+      },
       limit: 10,
       offset,
       order: [[sortBy as string, (sortOrder || 'asc') as string]],
@@ -134,8 +144,8 @@ class UploadRespository {
     };
   };
 
-  deleteFile = async (fileId: string, token: string) => {
-    const deleteStarred = await axios.delete('http://localhost:8082/api/file/starred/' + fileId, {
+  deleteFile = async (fileId: string, token: string, offset: number, type: string) => {
+    const deleteStarred = await axios.delete(`http://localhost:8082/api/file/starred/${fileId}?offset=${offset}`, {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
@@ -145,7 +155,7 @@ class UploadRespository {
       throw new Error("Starred service is unreachable");
     })
 
-    if(deleteStarred.status !== 200) {
+    if (deleteStarred.status !== 200) {
       throw new Error("Failed to delete starred-service")
     }
 
@@ -166,11 +176,24 @@ class UploadRespository {
       },
     }));
 
-    return await File.destroy({
-      where: {
-        id: fileId,
-      },
-    });
+    if (type === 'delete') {
+      return await File.destroy({
+        where: {
+          id: fileId,
+        },
+      });
+    } else {
+      const oneMonthFromNow = new Date();
+      oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
+
+      return await File.update({
+        deletedAt: oneMonthFromNow,
+      }, {
+        where: {
+          id: fileId,
+        },
+      });
+    }
   };
 
   totalFileSize = async (userId: string) => {
@@ -191,6 +214,63 @@ class UploadRespository {
     })
 
     return categories
+  }
+
+  getTrashFile = async (userId: string) => {
+    const trashFiles = await File.findAll({
+      where: {
+        userId,
+        deletedAt: {
+          [Op.ne]: null
+        }
+      }
+    })
+
+    return trashFiles
+  }
+
+  undoTrashFile = async (fileId: string) => {
+    const undoTrash = await File.update(
+      {
+        deletedAt: null,
+      },
+      {
+        where: {
+          id: fileId,
+        },
+      }
+    );
+
+    return undoTrash;
+  }
+
+  deleteExpiredFiles = async () => {
+    const thirsyDaysAgo = new Date();
+    thirsyDaysAgo.setDate(thirsyDaysAgo.getDate() - 30);
+
+    const expiredFiles = await File.findAll({
+      where: {
+        deletedAt: {
+          [Op.lt]: thirsyDaysAgo,
+        }
+      }
+    })
+
+    if (expiredFiles.length === 0) {
+      console.log("✅ No expired files found");
+      return;
+    }
+
+    for (const file of expiredFiles) {
+      await deleteObject(file.location);
+      await file.destroy({
+        where: {
+          id: file.id
+        }
+      });
+    }
+
+    console.log(`🗑 Deleted ${expiredFiles.length} expired files`);
   }
 }
 
