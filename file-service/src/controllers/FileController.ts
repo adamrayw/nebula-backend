@@ -3,6 +3,9 @@ import { StatusCodes } from "http-status-codes";
 import FileService from "../services/FileService";
 import { FilesAttributes } from "../db/models/File";
 import { redisClient } from "../config/redis";
+import { s3 } from "../config/s3";
+import { v4 as uuidv4 } from "uuid";
+import { CompleteMultipartUploadCommand, CreateMultipartUploadCommand, UploadPartCommand } from "@aws-sdk/client-s3";
 
 class UploadController {
   private readonly fileService: FileService;
@@ -224,6 +227,89 @@ class UploadController {
       }
     }
   };
+
+  startMultiUpload = async (req: Request, res: Response) => {
+    const { fileName, fileType } = req.body;
+    const uniqueKey = `${uuidv4()}-${fileName}`;
+
+    if (!fileName || !fileType) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    const command = new CreateMultipartUploadCommand({
+      Bucket: "filemangementapp",
+      Key: fileName,
+      ContentType: fileType,
+    });
+
+    try {
+      const response = await s3.send(command);
+      res.status(StatusCodes.OK).json({
+        status: 200,
+        message: "Start multi upload successfully!",
+        data: response.UploadId
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+          status: 500,
+          message: error.message,
+        });
+      }
+    }
+  }
+
+  uploadPart = async (req: Request, res: Response) => {
+    const { uploadId, fileName, partNumber } = req.body;
+    const fileBuffer = req.file?.buffer; // Ambil file sebagai Buffer
+
+    if (!uploadId || !fileName || !partNumber || !fileBuffer) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    try {
+      // Simpan chunk ke S3 menggunakan AWS SDK
+      const uploadPartCommand = new UploadPartCommand({
+        Bucket: "filemangementapp",
+        Key: fileName,
+        UploadId: uploadId,
+        PartNumber: parseInt(partNumber),
+        Body: fileBuffer,
+      });
+
+      const s3Response = await s3.send(uploadPartCommand);
+
+      res.json({
+        PartNumber: parseInt(partNumber),
+        ETag: s3Response.ETag,
+      });
+    } catch (error) {
+      console.error("Error uploading part:", error);
+      res.status(500).json({
+        error: "Failed to upload part",
+        reason: error
+      });
+    }
+  }
+
+  completeMultiUpload = async (req: Request, res: Response) => {
+    const { uploadId, fileName, uploadedParts } = req.body;
+
+    console.log(uploadId, fileName, uploadedParts);
+
+    const command = new CompleteMultipartUploadCommand({
+      Bucket: "filemangementapp",
+      Key: fileName,
+      UploadId: uploadId,
+      MultipartUpload: {
+        Parts: uploadedParts,
+      },
+    });
+
+    const s3res = await s3.send(command);
+    console.log(s3res);
+    res.json({ message: "Upload completed" });
+  }
 }
 
 export default UploadController;
