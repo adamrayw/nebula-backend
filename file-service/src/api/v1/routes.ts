@@ -1,13 +1,15 @@
 import { Request, RequestHandler, Response, Router } from "express";
-import FileController from "../../controllers/FileController";
 import upload from "../../middlewares/upload";
 import verifyToken from "../../middlewares/verfiyToken";
 import { uploadFileSchema } from "../../schemas/fileSchema";
 import { validateData } from "../../middlewares/validationMiddleware";
 import { cachingMiddleware, writeCache } from "../../middlewares/caching";
+import FileController from "../../controllers/FileController"
+import multer from "multer";
 
 const router = Router();
 const fileController = new FileController();
+const uploadFile = multer();
 
 // root
 router.get("/", (req: Request, res: Response) => {
@@ -16,6 +18,23 @@ router.get("/", (req: Request, res: Response) => {
     message: "Welcome to NebuloBox API!",
   });
 });
+
+// multipart upload 
+router.post("/file/uploadMulti", async (req: Request, res: Response, next) => {
+  try {
+    await fileController.startMultiUpload(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
+router.post("/file/upload-part", uploadFile.single("filePart"), async (req: Request, res: Response, next) => {
+  try {
+    await fileController.uploadPart(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
+router.post("/file/complete-upload", fileController.completeMultiUpload);
 
 // file
 router.post("/file/uploadFile", [upload, verifyToken, validateData(uploadFileSchema), writeCache], fileController.uploadFun);
