@@ -4,9 +4,7 @@ import { sequelize } from "../../config/db";
 import { DataType } from "sequelize-typescript";
 import File from "./File";
 
-const {
-  Model
-} = require('sequelize');
+import { Model } from 'sequelize';
 
 export interface CategoryAttributes {
   id?: string;
@@ -14,7 +12,7 @@ export interface CategoryAttributes {
   name: string;
 }
 
-class Category extends Model {
+class Category extends Model<CategoryAttributes> implements CategoryAttributes {
   public slug!: string;
   public name!: string;
 }
@@ -37,10 +35,5 @@ Category.init({
   sequelize,
   modelName: 'Category',
 });
-
-Category.hasMany(File, {
-  foreignKey: 'categoryId'
-})
-
 
 export default Category;

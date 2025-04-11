@@ -18,7 +18,7 @@ class UploadController {
       const user = req.user as { id: string } | undefined;
       file.userId = user?.id ?? "";
       file.originalSize = Number(originalSize);
-      file.category = category;
+      file.categoryId = category;
 
       if (!req.file) {
         res.status(StatusCodes.BAD_REQUEST).json({
@@ -214,6 +214,68 @@ class UploadController {
       res.status(StatusCodes.OK).json({
         status: 200,
         data: undoTrash,
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+          status: 500,
+          message: error.message,
+        });
+      }
+    }
+  };
+
+  getFolders = async (req: Request, res: Response) => {
+    try {
+      const userId = req.user as { id: string } | undefined;
+
+      const folders = await this.fileService.getFolders(userId?.id ?? '');
+
+      res.status(StatusCodes.OK).json({
+        status: 200,
+        data: folders,
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+          status: 500,
+          message: error.message,
+        });
+      }
+    }
+  }
+
+  createFolder = async (req: Request, res: Response) => {
+    try {
+      const userId = req.user as { id: string } | undefined;
+      const folderName = req.body.folderName as string;
+      const parentId = req.body.parentId as string | undefined;
+
+      const folders = await this.fileService.createFolder(userId?.id ?? '', folderName, parentId ?? '');
+
+      res.status(StatusCodes.CREATED).json({
+        status: 201,
+        data: folders,
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+          status: 500,
+          message: error.message,
+        });
+      }
+    }
+  };
+
+  getFilesByFolderId = async (req: Request, res: Response) => {
+    try {
+      const folderId = req.params.folderId as string;
+
+      const files = await this.fileService.getFilesByFolderId(folderId ?? '');
+
+      res.status(StatusCodes.OK).json({
+        status: 200,
+        data: files,
       });
     } catch (error) {
       if (error instanceof Error) {

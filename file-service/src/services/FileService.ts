@@ -48,16 +48,26 @@ class FileService {
     let { data, starredData, getStarredFile } = await this.fileRepository.getStarredFiles(userId, search, offset, token);
 
     // merging file and starred data
-    data = data.rows.map((file: FilesAttributes) => ({
+    // data = data.rows.map((file: FilesAttributes) => ({
+    //   ...file,
+    //   starred:
+    //     starredData.find(
+    //       (star: { fileId: string }) => star.fileId === file.id
+    //     ) || null,
+    // }));
+
+    // // Tampilkan jika hanya dibintangi saja
+    // data = data.filter(
+    //   (file: FilesAttributes & { starred: any }) => file.starred !== null
+    // );
+
+    const mappedStarredData = data.rows.map((file: FilesAttributes) => ({
       ...file,
       starred:
         starredData.find(
           (star: { fileId: string }) => star.fileId === file.id
         ) || null,
-    }));
-
-    // Tampilkan jika hanya dibintangi saja
-    data = data.filter(
+    })).filter(
       (file: FilesAttributes & { starred: any }) => file.starred !== null
     );
 
@@ -65,7 +75,7 @@ class FileService {
     const lastPage = getStarredFile.data.lastPage
 
     return {
-      data,
+      data: mappedStarredData,
       totalFile,
       lastPage
     }
@@ -82,7 +92,7 @@ class FileService {
   getCategories = (userId: string) => {
     return this.fileRepository.getCategories(userId);
   };
-  
+
   getTrashFile = (userId: string) => {
     return this.fileRepository.getTrashFile(userId);
   };
@@ -90,9 +100,21 @@ class FileService {
   undoTrashFile = (fileId: string) => {
     return this.fileRepository.undoTrashFile(fileId);
   }
-  
+
   deleteExpiredFiles = (fileId: string) => {
     return this.fileRepository.deleteExpiredFiles();
+  }
+
+  getFolders = (userId: string) => {
+    return this.fileRepository.getFolders(userId);
+  }
+
+  createFolder = (userId: string, folderName: string, parentId: string) => {
+    return this.fileRepository.createFolder(userId, folderName, parentId);
+  }
+
+  getFilesByFolderId = (folderId: string) => {
+    return this.fileRepository.getFilesByFolderId(folderId);
   }
 }
 

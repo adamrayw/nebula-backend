@@ -2,7 +2,7 @@ import { Request, RequestHandler, Response, Router } from "express";
 import FileController from "../../controllers/FileController";
 import upload from "../../middlewares/upload";
 import verifyToken from "../../middlewares/verfiyToken";
-import { uploadFileSchema } from "../../schemas/fileSchema";
+import { createNewFolderSchema, uploadFileSchema } from "../../schemas/fileSchema";
 import { validateData } from "../../middlewares/validationMiddleware";
 import { cachingMiddleware, writeCache } from "../../middlewares/caching";
 
@@ -30,5 +30,10 @@ router.get('/file/categories', [verifyToken], fileController.getCategories)
 // trash
 router.get('/file/trash', [verifyToken], fileController.getTrashFile)
 router.put('/file/undoTrash/:fileId', [verifyToken, writeCache], fileController.undoTrashFile)
+
+// folders
+router.get('/file/folders', [verifyToken], fileController.getFolders)
+router.get('/file/folders/:folderId', [verifyToken], fileController.getFilesByFolderId)
+router.post('/file/folders', [verifyToken], validateData(createNewFolderSchema), fileController.createFolder)
 
 export default router;

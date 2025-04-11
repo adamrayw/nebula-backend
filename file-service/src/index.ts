@@ -8,6 +8,7 @@ import { initializeRedisClient } from "./config/redis";
 import os from "os";
 import cluster from "cluster";
 import { startTrashCleanupJob } from "./cron-jobs/trashCleanupJob";
+import setupAssociations from "./db/models/associations";
 const { connectRabbitMQ } = require('./config/rabbitmq');
 // const { startConsumer } = require('./services/consumer');
 
@@ -25,6 +26,9 @@ async function startWorker() {
 
     app.use(helmet());
     app.use("/api/", router);
+
+    // Setup associations between models
+    await setupAssociations();
 
     // Hubungkan ke Redis
     await initializeRedisClient();
