@@ -290,7 +290,7 @@ class UploadRespository {
     const folder = await Folder.create({
       userId,
       name: folderName,
-      parentId: parentId
+      parentId: parentId || null,
     })
 
     return folder
