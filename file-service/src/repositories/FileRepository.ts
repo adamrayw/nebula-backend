@@ -5,6 +5,7 @@ import Category, { CategoryAttributes } from "../db/models/Category";
 import { sendToQueue } from "../services/producer";
 import { deleteObject } from "../config/s3";
 import { sequelize } from "../config/db";
+import Folder from "../db/models/Folder";
 
 class UploadRespository {
   upload = async (data: FilesAttributes) => {
@@ -19,16 +20,16 @@ class UploadRespository {
 
     const findCategoryId = await sequelize.query<CategoryAttributes>(`SELECT * FROM "Categories" WHERE slug = :slug LIMIT 1`, {
       type: QueryTypes.SELECT,
-      replacements: { slug: data.category }
+      replacements: { slug: data.categoryId }
     });
 
     const createFile = await File.create({
-      mimeType: data.mimetype,
-      size: data.size === 0 ? data.originalSize : data.size,
-      originalName: data.originalname,
+      mimeType: data.mimeType,
+      size: data.size === 0 ? (data.originalSize || 0) : (data.size || 0),
+      originalName: data.originalName,
       location: data.location,
       userId: data.userId,
-      categoryId: findCategoryId[0]?.id
+      categoryId: findCategoryId[0].id as string, 
     });
 
     if (createFile) {
@@ -37,7 +38,7 @@ class UploadRespository {
         data: {
           userId: data.userId,
           type: 'upload',
-          description: `Anda mengupload file ${data.originalname}`,
+          description: `Anda mengupload file ${data.originalName}`,
         },
       }));
     }
@@ -82,19 +83,19 @@ class UploadRespository {
 
     const starredData = getStarredFile.data.data;
 
-    let data = await File.findAll({
+    let data: FilesAttributes[] = await File.findAll({
       raw: true,
       where: {
         deletedAt: null,
         ...whereClause
       },
       limit: 10,
-      offset,
+      offset: parseInt(offset),
       order: [[sortBy as string, (sortOrder || 'asc') as string]],
     });
 
     return {
-      data,
+      data: data as FilesAttributes[],
       totalFile,
       starredData,
     };
@@ -134,7 +135,7 @@ class UploadRespository {
       raw: true,
       where: whereClause,
       // limit: 10,
-      offset,
+      offset: parseInt(offset),
     });
 
     return {
@@ -170,9 +171,9 @@ class UploadRespository {
     await sendToQueue(JSON.stringify({
       pattern: 'activity_queue',
       data: {
-        userId: file.userId,
+        userId: file?.userId,
         type: 'delete',
-        description: `Anda menghapus file ${file.originalName}`,
+        description: `Anda menghapus file ${file?.originalName}`,
       },
     }));
 
@@ -204,13 +205,14 @@ class UploadRespository {
 
   getCategories = async (userId: string) => {
     const categories = await Category.findAll({
-      include: {
+      include: [{
         model: File,
-        required: false,
+        as: 'files',
         where: {
-          userId
-        }
-      }
+          userId,
+        },
+        required: false,
+      }]
     })
 
     return categories
@@ -221,7 +223,7 @@ class UploadRespository {
       where: {
         userId,
         deletedAt: {
-          [Op.ne]: null
+          [Op.ne]: new Date(0) || null,
         }
       }
     })
@@ -232,7 +234,7 @@ class UploadRespository {
   undoTrashFile = async (fileId: string) => {
     const undoTrash = await File.update(
       {
-        deletedAt: null,
+        deletedAt: new Date(0) || null,
       },
       {
         where: {
@@ -263,7 +265,7 @@ class UploadRespository {
 
     for (const file of expiredFiles) {
       await deleteObject(file.location);
-      await file.destroy({
+      await File.destroy({
         where: {
           id: file.id
         }
@@ -271,6 +273,55 @@ class UploadRespository {
     }
 
     console.log(`🗑 Deleted ${expiredFiles.length} expired files`);
+  }
+
+  getFolders = async (userId: string) => {
+    const folders = await Folder.findAll({
+      where: {
+        userId,
+        parentId: null,
+      }
+    })
+
+    return folders
+  }
+
+  createFolder = async (userId: string, folderName: string, parentId: string) => {
+    const folder = await Folder.create({
+      userId,
+      name: folderName,
+      parentId: parentId || null,
+    })
+
+    return folder
+  }
+
+  getFilesByFolderId = async (folderId: string) => {
+    const folders = await Folder.findAll({
+      where: {
+        parentId: folderId,
+      }
+    })
+
+    const files = await Folder.findOne({
+      where: {
+        id: folderId,
+      },
+      include: [{
+        model: File,
+        as: 'files',
+        where: {
+          folderId: folderId,
+          deletedAt: null,
+        },
+        required: false,
+      }],
+    })
+
+    return {
+      folders,
+      files,
+    }
   }
 }
 
