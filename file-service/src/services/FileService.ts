@@ -97,8 +97,8 @@ class FileService {
     return this.fileRepository.getTrashFile(userId);
   };
 
-  undoTrashFile = (fileId: string) => {
-    return this.fileRepository.undoTrashFile(fileId);
+  undoTrashFile = (fileId: string, userId: string) => {
+    return this.fileRepository.undoTrashFile(fileId, userId);
   }
 
   deleteExpiredFiles = (fileId: string) => {
