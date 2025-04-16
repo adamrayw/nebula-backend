@@ -25,7 +25,7 @@ export class Activity extends Model<ActivityData> {
     userId: string;
 
     @Column({
-        type: DataType.ENUM('upload', 'download', 'delete', 'share', 'edit', 'view'),
+        type: DataType.ENUM('upload', 'download', 'delete', 'share', 'edit', 'view', 'undo', 'trash'),
         allowNull: false,
     })
     type: string;

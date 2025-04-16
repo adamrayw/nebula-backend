@@ -29,7 +29,7 @@ class UploadRespository {
       originalName: data.originalName,
       location: data.location,
       userId: data.userId,
-      categoryId: findCategoryId[0].id as string, 
+      categoryId: findCategoryId[0].id as string,
     });
 
     if (createFile) {
@@ -168,32 +168,62 @@ class UploadRespository {
       },
     });
 
-    await sendToQueue(JSON.stringify({
-      pattern: 'activity_queue',
-      data: {
-        userId: file?.userId,
-        type: 'delete',
-        description: `Anda menghapus file ${file?.originalName}`,
-      },
-    }));
+    // await sendToQueue(JSON.stringify({
+    //   pattern: 'activity_queue',
+    //   data: {
+    //     userId: file?.userId,
+    //     type: 'delete',
+    //     description: `Anda menghapus file ${file?.originalName}`,
+    //   },
+    // }));
 
     if (type === 'delete') {
-      return await File.destroy({
+      const deletePermanent = await File.destroy({
         where: {
           id: fileId,
         },
       });
+
+      if (deletePermanent === 0) {
+        throw new Error("File not found")
+      }
+
+      await sendToQueue(JSON.stringify({
+        pattern: 'activity_queue',
+        data: {
+          userId: file?.userId,
+          type: 'delete',
+          description: `Anda menghapus file ${file?.originalName}`,
+        },
+      }));
+
+      return deletePermanent;
     } else {
       const oneMonthFromNow = new Date();
       oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
 
-      return await File.update({
+      const moveToTrash = await File.update({
         deletedAt: oneMonthFromNow,
       }, {
         where: {
           id: fileId,
         },
       });
+
+      if (moveToTrash[0] === 0) {
+        throw new Error("File not found")
+      }
+
+      await sendToQueue(JSON.stringify({
+        pattern: 'activity_queue',
+        data: {
+          userId: file?.userId,
+          type: 'trash',
+          description: `Anda memindahkan file ${file?.originalName} ke tempat sampah`,
+        },
+      }));
+
+      return moveToTrash;
     }
   };
 
@@ -231,10 +261,16 @@ class UploadRespository {
     return trashFiles
   }
 
-  undoTrashFile = async (fileId: string) => {
+  undoTrashFile = async (fileId: string, userId: string) => {
+    const findFile = await File.findOne({
+      where: {
+        id: fileId,
+      },
+    });
+
     const undoTrash = await File.update(
       {
-        deletedAt: new Date(0) || null,
+        deletedAt: null,
       },
       {
         where: {
@@ -242,6 +278,19 @@ class UploadRespository {
         },
       }
     );
+
+    if (undoTrash[0] === 0) {
+      throw new Error("File not found")
+    }
+
+    sendToQueue(JSON.stringify({
+      pattern: 'activity_queue',
+      data: {
+        userId: userId,
+        type: 'undo',
+        description: `Anda mengembalikan file ${findFile?.originalName}`,
+      },
+    }));
 
     return undoTrash;
   }

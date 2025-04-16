@@ -209,7 +209,7 @@ class UploadController {
       const fileId = req.params.fileId as string;
       const user = req.user as { id: string } | undefined;
 
-      const undoTrash = await this.fileService.undoTrashFile(fileId ?? '');
+      const undoTrash = await this.fileService.undoTrashFile(fileId ?? '', user?.id ?? '');
 
       res.status(StatusCodes.OK).json({
         status: 200,
