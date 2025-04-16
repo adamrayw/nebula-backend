@@ -19,7 +19,7 @@ export interface FilesAttributes {
   folderId?: string;
   createdAt?: Date;
   updatedAt?: Date;
-  deletedAt?: Date;
+  deletedAt?: Date | null;
 }
 
 class File extends Model<FilesAttributes> implements FilesAttributes {
@@ -34,7 +34,7 @@ class File extends Model<FilesAttributes> implements FilesAttributes {
   declare folderId?: string;
   declare createdAt?: Date;
   declare updatedAt?: Date;
-  declare deletedAt?: Date;
+  declare deletedAt?: Date | null;
 }
 
 File.init({
@@ -69,7 +69,8 @@ File.init({
   },
   deletedAt: {
     type: DataType.DATE,
-    defaultValue: null
+    defaultValue: null,
+    allowNull: true,
   },
 }, {
   sequelize,
