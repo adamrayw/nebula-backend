@@ -2,7 +2,16 @@
 
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
-  async up (queryInterface, Sequelize) {
+  async up(queryInterface, Sequelize) {
+
+    await queryInterface.sequelize.query(`
+     DROP TYPE IF EXISTS "enum_Activities_type" CASCADE;
+    `);
+
+    await queryInterface.sequelize.query(`
+      CREATE TYPE "enum_Activities_type" AS ENUM ('upload', 'download', 'delete', 'share', 'edit', 'view', 'undo', 'trash');
+    `);
+
     await queryInterface.createTable('Activities', {
       id: {
         type: Sequelize.UUID,
@@ -15,7 +24,7 @@ module.exports = {
         allowNull: false
       },
       type: {
-        type: Sequelize.ENUM('upload', 'download', 'delete', 'share', 'edit', 'view'),
+        type: Sequelize.ENUM('upload', 'download', 'delete', 'share', 'edit', 'view', 'undo', 'trash'),
         allowNull: false,
       },
       description: {
@@ -33,7 +42,7 @@ module.exports = {
     });
   },
 
-  async down (queryInterface, Sequelize) {
-   await queryInterface.dropTable('Activities');
+  async down(queryInterface, Sequelize) {
+    await queryInterface.dropTable('Activities');
   }
 };
