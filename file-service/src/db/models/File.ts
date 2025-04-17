@@ -22,6 +22,22 @@ export interface FilesAttributes {
   deletedAt?: Date | null;
 }
 
+export interface FileUploadAttributes {
+  id?: string;
+  userId: string;
+  originalname: string;
+  mimetype: string;
+  size: number;
+  categoryId: string;
+  location: string;
+  originalSize?: number;
+  folderId?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+  deletedAt?: Date | null;
+}
+
+
 class File extends Model<FilesAttributes> implements FilesAttributes {
   declare id: string;
   declare userId: string;

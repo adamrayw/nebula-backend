@@ -1,8 +1,7 @@
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import FileService from "../services/FileService";
-import { FilesAttributes } from "../db/models/File";
-import { redisClient } from "../config/redis";
+import { FileUploadAttributes } from "../db/models/File";
 
 class UploadController {
   private readonly fileService: FileService;
@@ -13,7 +12,7 @@ class UploadController {
 
   uploadFun = async (req: Request, res: Response) => {
     try {
-      const file = req.file as unknown as FilesAttributes;
+      const file = req.file as unknown as FileUploadAttributes;
       const { originalSize, category } = req.body;
       const user = req.user as { id: string } | undefined;
       file.userId = user?.id ?? "";

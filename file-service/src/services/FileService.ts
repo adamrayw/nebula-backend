@@ -1,4 +1,4 @@
-import { FilesAttributes } from "../db/models/File";
+import { FilesAttributes, FileUploadAttributes } from "../db/models/File";
 import FileRepository from "../repositories/FileRepository";
 
 class FileService {
@@ -8,7 +8,7 @@ class FileService {
     this.fileRepository = new FileRepository();
   }
 
-  upload = (data: FilesAttributes) => {
+  upload = (data: FileUploadAttributes) => {
     return this.fileRepository.upload(data);
   };
 

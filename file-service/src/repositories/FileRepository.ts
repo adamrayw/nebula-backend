@@ -8,7 +8,15 @@ import { sequelize } from "../config/db";
 import Folder from "../db/models/Folder";
 
 class UploadRespository {
-  upload = async (data: FilesAttributes) => {
+  upload = async (data: {
+    userId: string;
+    originalname: string;
+    mimetype: string;
+    size: number;
+    location: string;
+    originalSize?: number | null;
+    categoryId: string;
+  }) => {
     // find category id
 
     // const findCategoryId = await Category.findOne({
@@ -24,13 +32,15 @@ class UploadRespository {
     });
 
     const createFile = await File.create({
-      mimeType: data.mimeType,
+      mimeType: data.mimetype,
       size: data.size === 0 ? (data.originalSize || 0) : (data.size || 0),
-      originalName: data.originalName,
+      originalName: data.originalname,
       location: data.location,
       userId: data.userId,
       categoryId: findCategoryId[0].id as string,
     });
+
+    console.log(createFile)
 
     if (createFile) {
       await sendToQueue(JSON.stringify({
@@ -38,7 +48,7 @@ class UploadRespository {
         data: {
           userId: data.userId,
           type: 'upload',
-          description: `Anda mengupload file ${data.originalName}`,
+          description: `Anda mengupload file ${data.originalname}`,
         },
       }));
     }
