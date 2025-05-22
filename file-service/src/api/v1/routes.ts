@@ -36,4 +36,9 @@ router.get('/file/folders', [verifyToken], fileController.getFolders)
 router.get('/file/folders/:folderId', [verifyToken], fileController.getFilesByFolderId)
 router.post('/file/folders', [verifyToken], validateData(createNewFolderSchema), fileController.createFolder)
 
+// pin
+router.post('/file/pin', [verifyToken, writeCache], fileController.pinItem)
+router.delete('/file/unpin', [verifyToken, writeCache], fileController.unpinItem)
+router.get('/file/pinnedItems', [verifyToken], fileController.pinnedItems)
+
 export default router;
