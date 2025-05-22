@@ -116,6 +116,18 @@ class FileService {
   getFilesByFolderId = (folderId: string) => {
     return this.fileRepository.getFilesByFolderId(folderId);
   }
+
+  pinItem = (fileId: string, userId: string) => {
+    return this.fileRepository.pinItem(fileId, userId);
+  }
+
+  unpinItem = (fileId: string, userId: string) => {
+    return this.fileRepository.unpinItem(fileId, userId);
+  }
+
+  getPinnedItems = (userId: string) => {
+    return this.fileRepository.pinnedItems(userId);
+  };
 }
 
 export default FileService;
