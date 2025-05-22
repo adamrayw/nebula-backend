@@ -69,7 +69,7 @@ export async function writeCache(req: Request, res: Response, next: NextFunction
 
     let pattern = ``;
 
-    if (req.path.startsWith('/file/undoTrash') || req.path.startsWith('/file/starredFiles')) {
+    if (req.path.startsWith('/file/undoTrash') || req.path.startsWith('/file/starredFiles') || req.path.startsWith('/file/pin') || req.path.startsWith('/file/unpin')) {
         pattern = `files@${userId}*`
     } else if (req.path.startsWith('/file/deleteFile')) {
         pattern = `files@${userId}?search=*?offset=${offset}?*`
