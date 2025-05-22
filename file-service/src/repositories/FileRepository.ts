@@ -6,9 +6,18 @@ import { sendToQueue } from "../services/producer";
 import { deleteObject } from "../config/s3";
 import { sequelize } from "../config/db";
 import Folder from "../db/models/Folder";
+import QuickAccess from "../db/models/QuickAccess";
 
 class UploadRespository {
-  upload = async (data: FilesAttributes) => {
+  upload = async (data: {
+    userId: string;
+    originalname: string;
+    mimetype: string;
+    size: number;
+    location: string;
+    originalSize?: number | null;
+    categoryId: string;
+  }) => {
     // find category id
 
     // const findCategoryId = await Category.findOne({
@@ -24,9 +33,9 @@ class UploadRespository {
     });
 
     const createFile = await File.create({
-      mimeType: data.mimeType,
+      mimeType: data.mimetype,
       size: data.size === 0 ? (data.originalSize || 0) : (data.size || 0),
-      originalName: data.originalName,
+      originalName: data.originalname,
       location: data.location,
       userId: data.userId,
       categoryId: findCategoryId[0].id as string,
@@ -38,7 +47,7 @@ class UploadRespository {
         data: {
           userId: data.userId,
           type: 'upload',
-          description: `Anda mengupload file ${data.originalName}`,
+          description: `Anda mengupload file ${data.originalname}`,
         },
       }));
     }
@@ -83,19 +92,34 @@ class UploadRespository {
 
     const starredData = getStarredFile.data.data;
 
-    let data: FilesAttributes[] = await File.findAll({
-      raw: true,
+    let data = await File.findAll({
       where: {
         deletedAt: null,
         ...whereClause
       },
+      include: [{
+          model: QuickAccess,
+          required: false,
+          as: "quickAccess",
+          where: {
+            userId,
+            type: 'file', // cuma ambil yang type file
+          }
+        }]
+      ,
       limit: 10,
       offset: parseInt(offset),
       order: [[sortBy as string, (sortOrder || 'asc') as string]],
     });
 
+    const plainFiles = data.map(file => {
+      return (file as any).get({ plain: true });
+    })
+
+    console.log(plainFiles)
+
     return {
-      data: data as FilesAttributes[],
+      data: plainFiles,
       totalFile,
       starredData,
     };
@@ -371,6 +395,61 @@ class UploadRespository {
       folders,
       files,
     }
+  }
+
+  pinnedItems = async (userId: string) => {
+    const pinnedItems = await QuickAccess.findAll({
+      where: {
+        userId,
+      },
+      include: [{
+        model: File,
+        as: "file",
+        required: false,
+      }],
+    })
+
+    return pinnedItems
+  }
+
+  pinItem = async (fileId: string, userId: string) => {
+
+    const findFile = await File.findOne({
+      where: {
+        id: fileId,
+      },
+    });
+
+    if (findFile === null) {
+      throw new Error("File not found")
+    }
+
+    const findPinnedItem = await QuickAccess.findOne({
+      where: {
+        userId,
+        targetId: fileId,
+      },
+    })
+
+    if (findPinnedItem) {
+      throw new Error("File already pinned")
+    }
+
+    return await QuickAccess.create({
+      userId,
+      targetId: fileId,
+      type: 'file',
+    })
+
+  }
+
+  unpinItem = async (fileId: string, userId: string) => {
+    return await QuickAccess.destroy({
+      where: {
+        userId,
+        targetId: fileId,
+      }
+    })
   }
 }
 

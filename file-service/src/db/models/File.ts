@@ -2,8 +2,6 @@
 
 import { sequelize } from "../../config/db";
 import { DataType } from "sequelize-typescript";
-import Folder from "./Folder";
-import Category from "./Category";
 
 import { Model } from 'sequelize';
 
@@ -22,6 +20,22 @@ export interface FilesAttributes {
   deletedAt?: Date | null;
 }
 
+export interface FileUploadAttributes {
+  id?: string;
+  userId: string;
+  originalname: string;
+  mimetype: string;
+  size: number;
+  categoryId: string;
+  location: string;
+  originalSize?: number;
+  folderId?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+  deletedAt?: Date | null;
+}
+
+
 class File extends Model<FilesAttributes> implements FilesAttributes {
   declare id: string;
   declare userId: string;
@@ -35,6 +49,7 @@ class File extends Model<FilesAttributes> implements FilesAttributes {
   declare createdAt?: Date;
   declare updatedAt?: Date;
   declare deletedAt?: Date | null;
+
 }
 
 File.init({

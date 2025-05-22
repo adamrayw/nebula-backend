@@ -1,6 +1,7 @@
 import File from "./File";
 import Category from "./Category";
 import Folder from "./Folder";
+import QuickAccess from "./QuickAccess";
 
 // Folder - Folder (subfolder support)
 Folder.hasMany(Folder, { foreignKey: 'parentId', as: 'subfolders' });
@@ -14,4 +15,15 @@ File.belongsTo(Folder, { foreignKey: 'folderId', as: 'folder' });
 Category.hasMany(File, { foreignKey: 'categoryId', as: 'files' });
 File.belongsTo(Category, { foreignKey: 'categoryId', as: 'category' });
 
-export default function setupAssociations() {}
+// QuickAccess - File
+File.hasOne(QuickAccess, {
+    foreignKey: 'targetId',
+    as: 'quickAccess',
+});
+
+QuickAccess.belongsTo(File, {
+    foreignKey: 'targetId',
+    as: 'file',
+});
+
+export default function setupAssociations() { }
