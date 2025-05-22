@@ -285,6 +285,68 @@ class UploadController {
       }
     }
   };
+
+  pinItem = async (req: Request, res: Response) => {
+    try {
+      const fileId = req.query.fileId as string;
+      const user = req.user as { id: string } | undefined;
+
+      const pinItem = await this.fileService.pinItem(fileId ?? '', user?.id ?? '');
+
+      res.status(StatusCodes.OK).json({
+        status: 200,
+        data: pinItem,
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+          status: 500,
+          message: error.message,
+        });
+      }
+    }
+  };
+
+  unpinItem = async (req: Request, res: Response) => {
+    try {
+      const fileId = req.query.fileId as string;
+      const user = req.user as { id: string } | undefined;
+
+      const unpinItem = await this.fileService.unpinItem(fileId ?? '', user?.id ?? '');
+
+      res.status(StatusCodes.OK).json({
+        status: 200,
+        data: unpinItem,
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+          status: 500,
+          message: error.message,
+        });
+      }
+    }
+  }
+
+  pinnedItems = async (req: Request, res: Response) => {
+    try {
+      const userId = req.user as { id: string } | undefined;
+
+      const pinnedItems = await this.fileService.getPinnedItems(userId?.id ?? '');
+
+      res.status(StatusCodes.OK).json({
+        status: 200,
+        data: pinnedItems,
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+          status: 500,
+          message: error.message,
+        });
+      }
+    }
+  }
 }
 
 export default UploadController;
