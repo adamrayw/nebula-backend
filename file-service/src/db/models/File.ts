@@ -2,8 +2,6 @@
 
 import { sequelize } from "../../config/db";
 import { DataType } from "sequelize-typescript";
-import Folder from "./Folder";
-import Category from "./Category";
 
 import { Model } from 'sequelize';
 
@@ -51,6 +49,7 @@ class File extends Model<FilesAttributes> implements FilesAttributes {
   declare createdAt?: Date;
   declare updatedAt?: Date;
   declare deletedAt?: Date | null;
+
 }
 
 File.init({
