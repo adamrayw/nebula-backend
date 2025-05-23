@@ -407,6 +407,7 @@ class UploadRespository {
         as: "file",
         required: false,
       }],
+      order: [['createdAt', 'DESC']]
     })
 
     return pinnedItems
@@ -430,6 +431,16 @@ class UploadRespository {
         targetId: fileId,
       },
     })
+
+    const findAllPinnedItems = await QuickAccess.findAll({
+      where: {
+        userId,
+      },
+    })
+
+    if(findAllPinnedItems.length === 8) {
+      throw new Error("Max pinned items reached")
+    }
 
     if (findPinnedItem) {
       throw new Error("File already pinned")
