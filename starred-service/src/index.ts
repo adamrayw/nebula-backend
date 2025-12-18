@@ -4,7 +4,7 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import { checkDbConnection } from "./config/db";
-import { initializeRedisClient } from "./middlewares/redis";
+import { initializeRedisClient } from "./config/redis";
 dotenv.config()
 
 async function initializeExpressServer() {

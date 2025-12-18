@@ -1,19 +1,6 @@
-import { S3Client } from "@aws-sdk/client-s3";
-import {NodeHttpHandler} from "@aws-sdk/node-http-handler";
+import { s3 } from "../config/s3";
 import multer from "multer";
 import multers3 from 'multer-s3';
-
-const s3 = new S3Client({
-    region: process.env.AWS_REGION as string,
-    credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID as string,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY as string,
-    },
-    requestHandler: new NodeHttpHandler({
-        connectionTimeout: 300000,
-        socketTimeout: 300000
-    }),
-});
 
 const upload = multer({
     storage: multers3({
@@ -21,7 +8,7 @@ const upload = multer({
         bucket: 'filemangementapp',
         acl: 'public-read',
         key: function (req, file, cb) {
-            cb(null, 'uploads/' + Date.now() + '_' + file.originalname);
+            cb(null, 'uploads/' + file.originalname);
         },
     }),
     limits: {

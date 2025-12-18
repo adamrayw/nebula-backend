@@ -3,7 +3,7 @@ module.exports = {
     username: 'postgres',
     password: 'root',
     database: 'notification_db',
-    host: 'db_notification',
+    host: 'localhost',
     dialect: 'postgres',
   },
   production: {

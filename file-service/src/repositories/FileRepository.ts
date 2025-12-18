@@ -1,27 +1,47 @@
 import File, { FilesAttributes } from "../db/models/File";
-import { Op } from "sequelize";
+import { Op, QueryTypes, Sequelize, where } from "sequelize";
 import axios from "axios";
-import Category from "../db/models/Category";
+import Category, { CategoryAttributes } from "../db/models/Category";
+import { sendToQueue } from "../services/producer";
+import { deleteObject } from "../config/s3";
+import { sequelize } from "../config/db";
+import Folder from "../db/models/Folder";
 
 class UploadRespository {
   upload = async (data: FilesAttributes) => {
     // find category id
 
-    const findCategoryId = await Category.findOne({
-      raw: true,
-      where: {
-        slug: data.category
-      }
-    })
+    // const findCategoryId = await Category.findOne({
+    //   raw: true,
+    //   where: {
+    //     slug: data.category
+    //   }
+    // })
+
+    const findCategoryId = await sequelize.query<CategoryAttributes>(`SELECT * FROM "Categories" WHERE slug = :slug LIMIT 1`, {
+      type: QueryTypes.SELECT,
+      replacements: { slug: data.categoryId }
+    });
 
     const createFile = await File.create({
-      mimeType: data.mimetype,
-      size: data.size === 0 ? data.originalSize : data.size,
-      originalName: data.originalname,
+      mimeType: data.mimeType,
+      size: data.size === 0 ? (data.originalSize || 0) : (data.size || 0),
+      originalName: data.originalName,
       location: data.location,
       userId: data.userId,
-      categoryId: findCategoryId.id
+      categoryId: findCategoryId[0].id as string,
     });
+
+    if (createFile) {
+      await sendToQueue(JSON.stringify({
+        pattern: 'activity_queue',
+        data: {
+          userId: data.userId,
+          type: 'upload',
+          description: `Anda mengupload file ${data.originalName}`,
+        },
+      }));
+    }
 
     return createFile
   };
@@ -35,7 +55,7 @@ class UploadRespository {
     sortBy: string,
     sortOrder: string
   ) => {
-    const whereClause: any = {
+    let whereClause: any = {
       userId,
     };
 
@@ -63,16 +83,19 @@ class UploadRespository {
 
     const starredData = getStarredFile.data.data;
 
-    let data = await File.findAll({
+    let data: FilesAttributes[] = await File.findAll({
       raw: true,
-      where: whereClause,
+      where: {
+        deletedAt: null,
+        ...whereClause
+      },
       limit: 10,
-      offset,
+      offset: parseInt(offset),
       order: [[sortBy as string, (sortOrder || 'asc') as string]],
     });
 
     return {
-      data,
+      data: data as FilesAttributes[],
       totalFile,
       starredData,
     };
@@ -112,7 +135,7 @@ class UploadRespository {
       raw: true,
       where: whereClause,
       // limit: 10,
-      offset,
+      offset: parseInt(offset),
     });
 
     return {
@@ -122,8 +145,8 @@ class UploadRespository {
     };
   };
 
-  deleteFile = async (fileId: string, token:string) => {
-    const deleteStarred = await axios.delete('http://localhost:8082/api/file/starred/' + fileId, {
+  deleteFile = async (fileId: string, token: string, offset: number, type: string) => {
+    const deleteStarred = await axios.delete(`http://localhost:8082/api/file/starred/${fileId}?offset=${offset}`, {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
@@ -133,11 +156,75 @@ class UploadRespository {
       throw new Error("Starred service is unreachable");
     })
 
-    return await File.destroy({
+    if (deleteStarred.status !== 200) {
+      throw new Error("Failed to delete starred-service")
+    }
+
+    // get file for user id
+    const file = await File.findOne({
+      raw: true,
       where: {
         id: fileId,
       },
     });
+
+    // await sendToQueue(JSON.stringify({
+    //   pattern: 'activity_queue',
+    //   data: {
+    //     userId: file?.userId,
+    //     type: 'delete',
+    //     description: `Anda menghapus file ${file?.originalName}`,
+    //   },
+    // }));
+
+    if (type === 'delete') {
+      const deletePermanent = await File.destroy({
+        where: {
+          id: fileId,
+        },
+      });
+
+      if (deletePermanent === 0) {
+        throw new Error("File not found")
+      }
+
+      await sendToQueue(JSON.stringify({
+        pattern: 'activity_queue',
+        data: {
+          userId: file?.userId,
+          type: 'delete',
+          description: `Anda menghapus file ${file?.originalName}`,
+        },
+      }));
+
+      return deletePermanent;
+    } else {
+      const oneMonthFromNow = new Date();
+      oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
+
+      const moveToTrash = await File.update({
+        deletedAt: oneMonthFromNow,
+      }, {
+        where: {
+          id: fileId,
+        },
+      });
+
+      if (moveToTrash[0] === 0) {
+        throw new Error("File not found")
+      }
+
+      await sendToQueue(JSON.stringify({
+        pattern: 'activity_queue',
+        data: {
+          userId: file?.userId,
+          type: 'trash',
+          description: `Anda memindahkan file ${file?.originalName} ke tempat sampah`,
+        },
+      }));
+
+      return moveToTrash;
+    }
   };
 
   totalFileSize = async (userId: string) => {
@@ -148,16 +235,142 @@ class UploadRespository {
 
   getCategories = async (userId: string) => {
     const categories = await Category.findAll({
-      include: {
+      include: [{
         model: File,
-        required: false,
+        as: 'files',
         where: {
-          userId
+          userId,
+        },
+        required: false,
+      }]
+    })
+
+    return categories
+  }
+
+  getTrashFile = async (userId: string) => {
+    const trashFiles = await File.findAll({
+      where: {
+        userId,
+        deletedAt: {
+          [Op.ne]: new Date(0) || null,
         }
       }
     })
 
-    return categories
+    return trashFiles
+  }
+
+  undoTrashFile = async (fileId: string, userId: string) => {
+    const findFile = await File.findOne({
+      where: {
+        id: fileId,
+      },
+    });
+
+    const undoTrash = await File.update(
+      {
+        deletedAt: null,
+      },
+      {
+        where: {
+          id: fileId,
+        },
+      }
+    );
+
+    if (undoTrash[0] === 0) {
+      throw new Error("File not found")
+    }
+
+    sendToQueue(JSON.stringify({
+      pattern: 'activity_queue',
+      data: {
+        userId: userId,
+        type: 'undo',
+        description: `Anda mengembalikan file ${findFile?.originalName}`,
+      },
+    }));
+
+    return undoTrash;
+  }
+
+  deleteExpiredFiles = async () => {
+    const thirsyDaysAgo = new Date();
+    thirsyDaysAgo.setDate(thirsyDaysAgo.getDate() - 30);
+
+    const expiredFiles = await File.findAll({
+      where: {
+        deletedAt: {
+          [Op.lt]: thirsyDaysAgo,
+        }
+      }
+    })
+
+    if (expiredFiles.length === 0) {
+      console.log("✅ No expired files found");
+      return;
+    }
+
+    for (const file of expiredFiles) {
+      await deleteObject(file.location);
+      await File.destroy({
+        where: {
+          id: file.id
+        }
+      });
+    }
+
+    console.log(`🗑 Deleted ${expiredFiles.length} expired files`);
+  }
+
+  getFolders = async (userId: string) => {
+    const folders = await Folder.findAll({
+      where: {
+        userId,
+        parentId: null,
+      }
+    })
+
+    return folders
+  }
+
+  createFolder = async (userId: string, folderName: string, parentId: string) => {
+    const folder = await Folder.create({
+      userId,
+      name: folderName,
+      parentId: parentId || null,
+    })
+
+    return folder
+  }
+
+  getFilesByFolderId = async (folderId: string) => {
+    const folders = await Folder.findAll({
+      where: {
+        parentId: folderId,
+      }
+    })
+
+    const files = await Folder.findOne({
+      where: {
+        id: folderId,
+      },
+      include: [{
+        model: File,
+        as: 'files',
+        where: {
+          folderId: folderId,
+          deletedAt: null,
+        },
+        required: false,
+      }],
+    })
+
+    return {
+      folders,
+      files,
+    }
   }
 }
 
